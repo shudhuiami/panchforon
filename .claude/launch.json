@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "panchforon",
+      "runtimeExecutable": "D:/laragon2/bin/php/php-8.3.30-Win32-vs16-x64/php.exe",
+      "runtimeArgs": ["artisan", "serve", "--port=8000"],
+      "cwd": "D:/laragon2/www/panchforon",
+      "port": 8000
+    }
+  ]
+}
