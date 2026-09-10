@@ -2,13 +2,23 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SettingsRepository;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRecipeRequest extends FormRequest
 {
+    /**
+     * Honours the "user submissions" toggle on the admin settings screen.
+     */
     public function authorize(): bool
     {
-        return true;
+        return app(SettingsRepository::class)->boolean('submissions_open', true);
+    }
+
+    protected function failedAuthorization(): never
+    {
+        throw new AuthorizationException('Recipe submissions are currently closed.');
     }
 
     /**
