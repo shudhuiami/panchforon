@@ -23,6 +23,7 @@ class UserModerationActions
             ->label(fn (User $record): string => $record->is_admin ? 'Revoke admin' : 'Make admin')
             ->icon(fn (User $record): Heroicon => $record->is_admin ? Heroicon::OutlinedShieldExclamation : Heroicon::OutlinedShieldCheck)
             ->color(fn (User $record): string => $record->is_admin ? 'gray' : 'primary')
+            ->authorize('moderate')
             ->requiresConfirmation()
             ->modalHeading(fn (User $record): string => $record->is_admin
                 ? "Revoke admin access for {$record->name}?"
@@ -48,6 +49,7 @@ class UserModerationActions
             ->label('Suspend')
             ->icon(Heroicon::OutlinedNoSymbol)
             ->color('danger')
+            ->authorize('moderate')
             ->visible(fn (User $record): bool => ! $record->isSuspended() && ! self::isSelf($record))
             ->modalHeading(fn (User $record): string => "Suspend {$record->name}?")
             ->modalDescription('They will be signed out of the API, blocked from logging back in, and locked out of this panel. This is reversible.')
@@ -87,6 +89,7 @@ class UserModerationActions
             ->label('Lift suspension')
             ->icon(Heroicon::OutlinedCheckCircle)
             ->color('success')
+            ->authorize('moderate')
             ->requiresConfirmation()
             ->modalHeading(fn (User $record): string => "Restore access for {$record->name}?")
             ->modalDescription('They will be able to sign in again. They will need to log in afresh, since their previous tokens were revoked.')

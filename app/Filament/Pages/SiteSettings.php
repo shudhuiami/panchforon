@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\User;
 use App\Services\SettingsRepository;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -19,6 +20,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Single screen for everything site-wide.
@@ -45,6 +47,18 @@ class SiteSettings extends Page
      * @var array<string, mixed>|null
      */
     public ?array $data = [];
+
+    /**
+     * Filament lets any authenticated panel user reach a custom page by
+     * default, so the admin check is repeated here rather than relying on the
+     * panel middleware alone.
+     */
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user instanceof User && $user->is_admin && ! $user->isSuspended();
+    }
 
     public function mount(): void
     {

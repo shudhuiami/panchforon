@@ -24,7 +24,16 @@ class ListRecipes extends ListRecords
      */
     public function getTabs(): array
     {
+        /**
+         * "All recipes" is first, and therefore the default, so the landing
+         * view is the whole catalogue rather than a filtered slice. The review
+         * queue is one tab away and its count is also on the sidebar badge and
+         * the dashboard.
+         */
         return [
+            'all' => Tab::make('All recipes')
+                ->badge(Recipe::query()->count()),
+
             'queue' => Tab::make('Awaiting review')
                 ->modifyQueryUsing(fn (Builder $query) => $query->awaitingModeration())
                 ->badge(Recipe::query()->awaitingModeration()->count())
@@ -37,9 +46,6 @@ class ListRecipes extends ListRecords
             'unpublished' => Tab::make('Unpublished')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('moderation_status', ModerationStatus::Unpublished))
                 ->badge(Recipe::query()->where('moderation_status', ModerationStatus::Unpublished)->count()),
-
-            'all' => Tab::make('All recipes')
-                ->badge(Recipe::query()->count()),
         ];
     }
 }
