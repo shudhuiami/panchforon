@@ -27,22 +27,29 @@ class RecipesTable
                     ->sortable()
                     ->wrap()
                     ->weight('medium')
-                    ->description(fn ($record): string => collect([$record->cuisine, $record->category])
-                        ->filter()
-                        ->implode(' · ')),
+                    /**
+                     * Carries the source on phones, where that column is hidden.
+                     */
+                    ->description(fn (Recipe $record): string => collect([
+                        $record->source === RecipeSource::Api ? 'TheMealDB' : 'User',
+                        $record->cuisine,
+                        $record->category,
+                    ])->filter()->implode(' · ')),
 
                 TextColumn::make('source')
                     ->label('Source')
                     ->badge()
                     ->formatStateUsing(fn (RecipeSource $state): string => $state === RecipeSource::Api ? 'TheMealDB' : 'User')
                     ->color(fn (RecipeSource $state): string => $state === RecipeSource::Api ? 'gray' : 'primary')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
 
                 TextColumn::make('user.name')
                     ->label('Author')
                     ->searchable()
                     ->placeholder('Imported')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg'),
 
                 TextColumn::make('moderation_status')
                     ->label('Status')
@@ -57,19 +64,22 @@ class RecipesTable
                     ->numeric(decimalPlaces: 2)
                     ->placeholder('Unrated')
                     ->alignEnd()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('lg'),
 
                 TextColumn::make('stat.ratings_count')
                     ->label('Ratings')
                     ->alignEnd()
                     ->placeholder('0')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
 
                 TextColumn::make('created_at')
                     ->label('Added')
                     ->date('j M Y')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('xl'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

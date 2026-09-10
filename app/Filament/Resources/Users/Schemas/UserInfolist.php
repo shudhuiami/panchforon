@@ -41,9 +41,9 @@ class UserInfolist
                         TextEntry::make('suspended_at')
                             ->label('Status')
                             ->badge()
-                            ->formatStateUsing(fn ($state): string => $state ? 'Suspended' : 'Active')
-                            ->color(fn ($state): string => $state ? 'danger' : 'success')
-                            ->default(''),
+                            ->formatStateUsing(fn (): string => 'Suspended')
+                            ->color('danger')
+                            ->placeholder('Active'),
 
                         TextEntry::make('email_verified_at')
                             ->label('Email verified')

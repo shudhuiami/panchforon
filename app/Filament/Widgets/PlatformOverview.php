@@ -38,6 +38,7 @@ class PlatformOverview extends StatsOverviewWidget
             Stat::make('Total recipes', number_format(Recipe::query()->count()))
                 ->description('Imported and submitted')
                 ->descriptionIcon(Heroicon::OutlinedBookOpen)
+                ->descriptionColor('gray')
                 ->icon(Heroicon::OutlinedBookOpen)
                 ->color('gray')
                 ->url(RecipeResource::getUrl('index')),
@@ -50,11 +51,16 @@ class PlatformOverview extends StatsOverviewWidget
                 ->color($awaitingReview > 0 ? 'warning' : 'gray')
                 ->url(RecipeResource::getUrl('index', ['activeTab' => 'queue'])),
 
+            /**
+             * Deliberately neutral. Only the moderation queue turns amber, so a
+             * colour on this row always means something needs attention.
+             */
             Stat::make('Ratings this week', number_format($ratingsThisWeek))
                 ->description('Last seven days')
                 ->descriptionIcon(Heroicon::OutlinedStar)
+                ->descriptionColor('gray')
                 ->icon(Heroicon::OutlinedStar)
-                ->color('primary'),
+                ->color('gray'),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\AvatarProviders\InitialsAvatarProvider;
 use App\Filament\Widgets\PlatformOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -29,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Panchforon')
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
             /**
              * Warm orange accents on a warm-neutral (Stone) base. Filament generates
              * the full shade ramp from each hex, so the panel stays desaturated
