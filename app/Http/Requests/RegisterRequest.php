@@ -2,13 +2,23 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SettingsRepository;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterRequest extends FormRequest
 {
+    /**
+     * Honours the "registration open" toggle on the admin settings screen.
+     */
     public function authorize(): bool
     {
-        return true;
+        return app(SettingsRepository::class)->boolean('registration_open', true);
+    }
+
+    protected function failedAuthorization(): never
+    {
+        throw new AuthorizationException('Registration is currently closed.');
     }
 
     /**

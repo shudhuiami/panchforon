@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
 use Database\Factories\RecipeFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property RecipeSource $source
+ * @property ModerationStatus $moderation_status
  */
 class Recipe extends Model
 {
@@ -25,6 +27,9 @@ class Recipe extends Model
     protected $fillable = [
         'user_id',
         'source',
+        'moderation_status',
+        'moderated_at',
+        'moderated_by',
         'external_id',
         'title',
         'slug',
@@ -43,8 +48,45 @@ class Recipe extends Model
     {
         return [
             'source' => RecipeSource::class,
+            'moderation_status' => ModerationStatus::class,
+            'moderated_at' => 'datetime',
             'servings' => 'integer',
         ];
+    }
+
+    /**
+     * Only recipes from TheMealDB are exempt from moderation; anything a user
+     * submitted can be held back, unpublished, or removed by an admin.
+     */
+    public function isUserSubmitted(): bool
+    {
+        return $this->source === RecipeSource::User;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function moderator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'moderated_by');
+    }
+
+    /**
+     * Restrict a query to recipes the public API is allowed to return.
+     *
+     * @param  Builder<Recipe>  $query
+     */
+    public function scopePubliclyVisible(Builder $query): void
+    {
+        $query->whereIn('recipes.moderation_status', ModerationStatus::publiclyVisible());
+    }
+
+    /**
+     * @param  Builder<Recipe>  $query
+     */
+    public function scopeAwaitingModeration(Builder $query): void
+    {
+        $query->where('recipes.moderation_status', ModerationStatus::Pending);
     }
 
     /**

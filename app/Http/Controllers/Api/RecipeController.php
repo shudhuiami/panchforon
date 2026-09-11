@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRecipeRequest;
@@ -12,6 +13,7 @@ use App\Models\Ingredient;
 use App\Models\IngredientAlias;
 use App\Models\Recipe;
 use App\Models\RecipeIngredient;
+use App\Models\User;
 use App\Services\IngredientParser;
 use App\Services\RankingService;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +31,7 @@ class RecipeController extends Controller
         $perPage = $request->integer('per_page', 12);
         $perPage = max(1, min($perPage, 50));
 
-        $query = Recipe::query()->with('stat');
+        $query = Recipe::query()->with('stat')->publiclyVisible();
 
         $query->filter([
             'cuisine' => $request->input('cuisine'),
@@ -52,6 +54,10 @@ class RecipeController extends Controller
         $recipe = Recipe::where('slug', $slug)
             ->with(['user', 'ingredients.ingredient', 'stat', 'ratings.user'])
             ->firstOrFail();
+
+        if (! $this->canViewRecipe($request, $recipe)) {
+            abort(404);
+        }
 
         return new RecipeDetailResource($recipe);
     }
@@ -76,6 +82,7 @@ class RecipeController extends Controller
         $recipe = Recipe::create([
             'user_id' => $userId,
             'source' => RecipeSource::User,
+            'moderation_status' => ModerationStatus::Pending,
             'title' => $title,
             'slug' => $slug,
             'cuisine' => $request->cuisine,
@@ -213,6 +220,7 @@ class RecipeController extends Controller
     public function cuisines(): JsonResponse
     {
         $cuisines = Recipe::query()
+            ->publiclyVisible()
             ->selectRaw('cuisine, count(*) as count')
             ->whereNotNull('cuisine')
             ->where('cuisine', '!=', '')
@@ -231,6 +239,7 @@ class RecipeController extends Controller
     public function categories(): JsonResponse
     {
         $categories = Recipe::query()
+            ->publiclyVisible()
             ->selectRaw('category, count(*) as count')
             ->whereNotNull('category')
             ->where('category', '!=', '')
@@ -241,6 +250,27 @@ class RecipeController extends Controller
         return response()->json([
             'data' => $categories,
         ]);
+    }
+
+    /**
+     * A recipe that is not approved stays readable by its author and by
+     * admins, so submitting one does not look like it silently vanished.
+     * Everyone else gets a 404 rather than a 403, which would confirm that
+     * the recipe exists.
+     */
+    protected function canViewRecipe(Request $request, Recipe $recipe): bool
+    {
+        if ($recipe->moderation_status === ModerationStatus::Approved) {
+            return true;
+        }
+
+        $user = $request->user('sanctum');
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        return $user->is_admin || (int) $recipe->user_id === (int) $user->id;
     }
 
     /**

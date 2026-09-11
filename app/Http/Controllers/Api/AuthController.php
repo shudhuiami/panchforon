@@ -46,6 +46,16 @@ class AuthController extends Controller
             ]);
         }
 
+        /**
+         * Checked after the password so a wrong password on a suspended account
+         * does not reveal that the account exists.
+         */
+        if ($user->isSuspended()) {
+            throw ValidationException::withMessages([
+                'email' => ['This account has been suspended.'],
+            ]);
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
