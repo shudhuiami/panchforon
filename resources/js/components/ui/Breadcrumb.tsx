@@ -19,7 +19,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = '' })
                 <li>
                     <Link
                         to="/"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-saffron-soft text-saffron-deep hover:bg-saffron hover:text-ink transition-colors focus-visible:outline-3 focus-visible:outline-saffron"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-saffron-soft text-saffron hover:bg-saffron hover:text-ink transition-colors focus-visible:outline-3 focus-visible:outline-saffron"
                         aria-label="Home"
                     >
                         <Home className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -41,7 +41,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = '' })
                             ) : (
                                 <span
                                     aria-current={isLast ? 'page' : undefined}
-                                    className="inline-flex items-center h-8 px-3 rounded-full bg-ink text-white font-bold truncate max-w-48 sm:max-w-md"
+                                    className="inline-flex items-center h-8 px-3 rounded-full bg-surface-3 text-ink font-bold truncate max-w-48 sm:max-w-md"
                                 >
                                     {item.label}
                                 </span>

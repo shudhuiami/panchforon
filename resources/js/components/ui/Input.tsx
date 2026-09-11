@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
             {label && (
                 <label
                     htmlFor={inputId}
-                    className="block text-xs font-bold uppercase tracking-wide text-ink-2 mb-2 transition-colors group-focus-within/field:text-saffron-deep"
+                    className="block text-xs font-bold uppercase tracking-wide text-ink-2 mb-2 transition-colors group-focus-within/field:text-saffron"
                 >
                     {label}
                 </label>
@@ -40,7 +40,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
                 {leftIcon && (
                     <div
                         className={`absolute left-4 pointer-events-none flex items-center transition-colors ${
-                            isInvalid ? 'text-chili-deep' : 'text-ink-3 group-focus-within/field:text-saffron-deep'
+                            isInvalid ? 'text-chili' : 'text-ink-3 group-focus-within/field:text-saffron'
                         }`}
                     >
                         {leftIcon}
@@ -72,7 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
                 {rightIcon && (
                     <div
                         className={`absolute right-4 flex items-center transition-colors ${
-                            isInvalid ? 'text-chili-deep' : 'text-ink-3'
+                            isInvalid ? 'text-chili' : 'text-ink-3'
                         }`}
                     >
                         {rightIcon}
@@ -83,7 +83,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
             {errorMessage ? (
                 <p
                     id={`${inputId}-error`}
-                    className="mt-2 text-sm text-chili-deep font-semibold flex items-center gap-1.5 animate-fade-in"
+                    className="mt-2 text-sm text-chili font-semibold flex items-center gap-1.5 animate-fade-in"
                 >
                     <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
                     {errorMessage}

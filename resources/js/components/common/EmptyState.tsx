@@ -28,11 +28,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
         {/* Rotated sticker icon block with a tiny sparkle */}
         <div className="relative mb-7">
-            <div className="w-24 h-24 rounded-3xl bg-turmeric-soft border-2 border-ink shadow-pop-saffron sticker flex items-center justify-center text-turmeric-deep animate-float">
+            <div className="w-24 h-24 rounded-3xl bg-turmeric-soft border-2 border-ink shadow-pop-saffron sticker flex items-center justify-center text-turmeric animate-float">
                 <Icon className="w-11 h-11 stroke-[2.25]" />
             </div>
             <span
-                className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-chili text-white flex items-center justify-center border-2 border-ink sticker-r"
+                className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-hot text-on-primary flex items-center justify-center border-2 border-canvas sticker-r"
                 aria-hidden="true"
             >
                 <Sparkles className="w-4 h-4" />

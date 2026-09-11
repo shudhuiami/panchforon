@@ -45,9 +45,9 @@ export const StarRating: React.FC<StarRatingProps> = ({
                             <Star
                                 className={`${starSizes[size]} transition-colors duration-150 ${
                                     isFilled
-                                        ? 'text-turmeric-deep fill-turmeric drop-shadow-[0_1px_0_rgba(154,107,0,0.35)]'
+                                        ? 'text-turmeric fill-turmeric'
                                         : 'text-line-strong fill-cream-2'
-                                } ${interactive ? 'group-hover/star:text-turmeric-deep group-hover/star:fill-turmeric' : ''}`}
+                                } ${interactive ? 'group-hover/star:text-turmeric group-hover/star:fill-turmeric' : ''}`}
                             />
                         </button>
                     );

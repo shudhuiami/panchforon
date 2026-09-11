@@ -242,7 +242,7 @@ export const RecipeDetailPage: React.FC = () => {
                             </Button>
                         </Link>
                         <Button
-                            variant="destructive"
+                            variant="danger"
                             size="sm"
                             onClick={handleDelete}
                             isLoading={deleteRecipeMutation.isPending}

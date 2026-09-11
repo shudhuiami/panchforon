@@ -29,7 +29,7 @@ export const RootApp: React.FC = () => {
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
                 <BrowserRouter>
-                    <div className="flex flex-col min-h-screen bg-neutral-50 text-ink selection:bg-brand-primary/20 selection:text-ink">
+                    <div className="flex min-h-dvh flex-col bg-canvas text-ink">
                         <Navbar />
                         <main className="flex-1 w-full">
                             <Routes>

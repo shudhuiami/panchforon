@@ -72,7 +72,7 @@ export const Modal: React.FC<ModalProps> = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="shrink-0 w-10 h-10 rounded-full bg-ink text-white flex items-center justify-center hover:bg-chili hover:rotate-90 transition-all duration-300 cursor-pointer focus-visible:outline-3 focus-visible:outline-saffron focus-visible:outline-offset-2"
+                        className="shrink-0 w-10 h-10 rounded-full bg-surface-3 text-ink flex items-center justify-center hover:bg-hot hover:text-on-primary hover:rotate-90 transition-all duration-300 cursor-pointer focus-visible:outline-3 focus-visible:outline-primary focus-visible:outline-offset-2"
                         aria-label="Close modal"
                     >
                         <X className="w-5 h-5 stroke-[2.5]" />

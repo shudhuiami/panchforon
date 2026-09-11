@@ -164,7 +164,7 @@ export const RegisterPage: React.FC = () => {
                             </span>
                             <Button
                                 type="button"
-                                variant="dark"
+                                variant="secondary"
                                 size="sm"
                                 onClick={handleDemoLogin}
                                 isLoading={isDemoLoading}

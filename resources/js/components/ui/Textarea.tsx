@@ -27,7 +27,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
             {label && (
                 <label
                     htmlFor={textareaId}
-                    className="block text-xs font-bold uppercase tracking-wide text-ink-2 mb-2 transition-colors group-focus-within/field:text-saffron-deep"
+                    className="block text-xs font-bold uppercase tracking-wide text-ink-2 mb-2 transition-colors group-focus-within/field:text-saffron"
                 >
                     {label}
                 </label>
@@ -57,7 +57,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
             {errorMessage ? (
                 <p
                     id={`${textareaId}-error`}
-                    className="mt-2 text-sm text-chili-deep font-semibold flex items-center gap-1.5 animate-fade-in"
+                    className="mt-2 text-sm text-chili font-semibold flex items-center gap-1.5 animate-fade-in"
                 >
                     <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
                     {errorMessage}

@@ -71,7 +71,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             aria-current={isActive ? 'page' : undefined}
                             className={`w-10 h-10 rounded-full font-display font-bold text-sm tabular-nums transition-all duration-200 cursor-pointer focus-visible:outline-3 focus-visible:outline-saffron ${
                                 isActive
-                                    ? 'bg-ink text-white shadow-glow-saffron scale-105'
+                                    ? 'bg-primary text-on-primary shadow-glow-primary scale-105'
                                     : 'bg-transparent text-ink-2 hover:bg-paper hover:text-ink hover:shadow-md'
                             }`}
                         >

@@ -69,7 +69,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
     const isMax = value >= max;
 
     const btnBase =
-        'flex items-center justify-center rounded-full bg-saffron-soft text-saffron-deep hover:bg-saffron hover:text-ink active:scale-90 transition-all duration-150 cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-saffron-soft disabled:hover:text-saffron-deep disabled:active:scale-100 focus-visible:outline-3 focus-visible:outline-saffron focus-visible:z-10';
+        'flex items-center justify-center rounded-full bg-saffron-soft text-saffron hover:bg-saffron hover:text-ink active:scale-90 transition-all duration-150 cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-saffron-soft disabled:hover:text-saffron disabled:active:scale-100 focus-visible:outline-3 focus-visible:outline-saffron focus-visible:z-10';
 
     return (
         <div

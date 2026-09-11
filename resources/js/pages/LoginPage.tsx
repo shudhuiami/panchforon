@@ -178,7 +178,7 @@ export const LoginPage: React.FC = () => {
                                     </button>
                                     <Button
                                         type="button"
-                                        variant="dark"
+                                        variant="secondary"
                                         size="sm"
                                         onClick={handleDemoLogin}
                                         isLoading={isDemoLoading}

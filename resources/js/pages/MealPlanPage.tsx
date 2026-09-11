@@ -123,7 +123,7 @@ export const MealPlanPage: React.FC = () => {
                                 </Button>
                             </Link>
                             <Link to="/register" className="block">
-                                <Button variant="dark" size="md" className="w-full rounded-full">
+                                <Button variant="secondary" size="md" className="w-full rounded-full">
                                     Register
                                 </Button>
                             </Link>
