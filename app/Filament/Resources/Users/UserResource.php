@@ -52,9 +52,6 @@ class UserResource extends Resource
         return UsersTable::configure($table);
     }
 
-    /**
-     * @return Builder<User>
-     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->withCount(['recipes', 'ratings']);

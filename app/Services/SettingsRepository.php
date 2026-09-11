@@ -65,6 +65,7 @@ class SettingsRepository
     }
 
     /**
+     * @param  array<int, string>  $default
      * @return array<int, string>
      */
     public function array(string $key, array $default = []): array

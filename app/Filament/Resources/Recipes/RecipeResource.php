@@ -50,9 +50,6 @@ class RecipeResource extends Resource
         return RecipesTable::configure($table);
     }
 
-    /**
-     * @return Builder<Recipe>
-     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['user', 'stat']);

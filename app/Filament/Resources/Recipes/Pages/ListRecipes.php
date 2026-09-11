@@ -35,7 +35,7 @@ class ListRecipes extends ListRecords
                 ->badge(Recipe::query()->count()),
 
             'queue' => Tab::make('Awaiting review')
-                ->modifyQueryUsing(fn (Builder $query) => $query->awaitingModeration())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('moderation_status', ModerationStatus::Pending))
                 ->badge(Recipe::query()->awaitingModeration()->count())
                 ->badgeColor('warning'),
 

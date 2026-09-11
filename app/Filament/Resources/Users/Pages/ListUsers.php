@@ -27,11 +27,11 @@ class ListUsers extends ListRecords
                 ->badge(User::query()->count()),
 
             'admins' => Tab::make('Admins')
-                ->modifyQueryUsing(fn (Builder $query) => $query->admins())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_admin', true))
                 ->badge(User::query()->admins()->count()),
 
             'suspended' => Tab::make('Suspended')
-                ->modifyQueryUsing(fn (Builder $query) => $query->suspended())
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereNotNull('suspended_at'))
                 ->badge(User::query()->suspended()->count())
                 ->badgeColor('danger'),
         ];
