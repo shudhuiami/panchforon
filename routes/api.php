@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CookController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
+use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
@@ -32,6 +33,9 @@ Route::get('/categories', [RecipeController::class, 'categories']);
 Route::get('/settings', SettingsController::class);
 Route::get('/home', HomeController::class);
 Route::get('/cooks/{id}', [CookController::class, 'show'])->whereNumber('id');
+Route::get('/pages', [PageController::class, 'index']);
+Route::get('/content-blocks', [PageController::class, 'blocks']);
+Route::get('/pages/{slug}', [PageController::class, 'show'])->where('slug', '[a-z0-9\-]+');
 
 /*
 |--------------------------------------------------------------------------

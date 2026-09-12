@@ -16,6 +16,7 @@ import { AccountPage } from './pages/AccountPage';
 import { MyRecipesPage } from './pages/MyRecipesPage';
 import { MyRatingsPage } from './pages/MyRatingsPage';
 import { CookPage } from './pages/CookPage';
+import { ContentPage } from './pages/ContentPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ShoppingListPage } from './pages/ShoppingListPage';
@@ -44,6 +45,7 @@ export const RootApp: React.FC = () => (
                             <Route path="/recipes" element={<RecipesPage />} />
                             <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
                             <Route path="/cooks/:id" element={<CookPage />} />
+                            <Route path="/p/:slug" element={<ContentPage />} />
                             <Route element={<RequireAuth />}>
                                 <Route path="/recipes/create" element={<CreateRecipePage />} />
                                 <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />

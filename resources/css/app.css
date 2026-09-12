@@ -211,6 +211,32 @@
         border: 1px solid var(--line);
     }
 
+    /* Admin-written page bodies */
+    .prose { color: var(--ink-2); font-size: 1.0625rem; line-height: 1.75; }
+    .prose > * + * { margin-top: 1.25em; }
+    .prose h1, .prose h2, .prose h3, .prose h4 { color: var(--ink); font-family: var(--font-display); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+    .prose h1 { font-size: 2rem; margin-top: 2em; }
+    .prose h2 { font-size: 1.6rem; margin-top: 1.8em; }
+    .prose h3 { font-size: 1.3rem; margin-top: 1.6em; }
+    .prose h4 { font-size: 1.1rem; margin-top: 1.5em; }
+    .prose strong { color: var(--ink); font-weight: 600; }
+    .prose a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+    .prose a:hover { color: var(--primary-hover); }
+    .prose ul, .prose ol { padding-left: 1.4em; }
+    .prose ul { list-style: disc; }
+    .prose ol { list-style: decimal; }
+    .prose li + li { margin-top: 0.4em; }
+    .prose li::marker { color: var(--primary); }
+    .prose blockquote { border-left: 3px solid var(--primary); padding-left: 1.1em; color: var(--ink-3); font-style: italic; }
+    .prose code { background: var(--surface-2); border-radius: 0.4em; padding: 0.15em 0.4em; font-size: 0.9em; }
+    .prose pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: 1rem; padding: 1rem 1.15rem; overflow-x: auto; }
+    .prose pre code { background: none; padding: 0; }
+    .prose hr { border: 0; border-top: 1px solid var(--line); margin: 2.5em 0; }
+    .prose img { border-radius: 1.25rem; }
+    .prose table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+    .prose th, .prose td { border-bottom: 1px solid var(--line); padding: 0.6em 0.8em; text-align: left; }
+    .prose th { color: var(--ink); font-weight: 600; }
+
     /* Hide scrollbar for horizontal scrollers */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

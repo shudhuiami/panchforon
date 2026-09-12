@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Star } from 'lucide-react';
 import { HomeCuisine, HomeStats, RecipeList } from '../../types/api';
 import { SearchBox } from '../recipes/SearchBox';
+import { useContentBlocks } from '../content/useContent';
 import { Photo } from '../../components/ui/Photo';
 
 const HEADLINE: Array<{ word: string; spice?: boolean }> = [
@@ -103,6 +104,7 @@ interface HeroProps {
  */
 export const Hero: React.FC<HeroProps> = ({ featured, cuisines, stats, isLoading }) => {
     const navigate = useNavigate();
+    const block = useContentBlocks();
     const [backdropLoaded, setBackdropLoaded] = useState(false);
     const [backdropFailed, setBackdropFailed] = useState(false);
     const backdrop = featured?.image_url && !backdropFailed ? featured.image_url : null;
@@ -139,7 +141,7 @@ export const Hero: React.FC<HeroProps> = ({ featured, cuisines, stats, isLoading
                             <span className="absolute inset-0 animate-pulse-dot rounded-full bg-primary" />
                             <span className="relative size-2 rounded-full bg-primary" />
                         </span>
-                        {stats ? `${stats.recipes.toLocaleString()} recipes from ${stats.cooks.toLocaleString()} home cooks` : 'Community recipes, ranked fairly'}
+                        {stats ? `${stats.recipes.toLocaleString()} recipes from ${stats.cooks.toLocaleString()} home cooks` : block('home_hero_eyebrow')}
                     </p>
 
                     <h1
@@ -159,8 +161,7 @@ export const Hero: React.FC<HeroProps> = ({ featured, cuisines, stats, isLoading
                     </h1>
 
                     <p className="mt-6 max-w-xl animate-slide-up text-lg leading-relaxed text-ink-2 animation-delay-500 sm:text-xl">
-                        Recipes from home cooks in Bangladesh and far beyond, ranked by the people who cooked them. Plan the week in a tap
-                        and shop from one merged list.
+{block('home_hero_body')}
                     </p>
 
                     <div className="mt-8 max-w-2xl animate-slide-up animation-delay-500">

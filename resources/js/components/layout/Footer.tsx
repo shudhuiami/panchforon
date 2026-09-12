@@ -2,17 +2,21 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteSettings } from '../../features/site/useSiteSettings';
+import { useContentBlocks, useFooterPages } from '../../features/content/useContent';
 import { Logo } from './Logo';
 
 const linkClass = 'text-sm text-ink-2 transition-colors hover:text-ink';
 
 /**
- * Every link here goes somewhere real. Legal and about pages arrive with the
- * CMS, and are added to the columns then rather than as placeholders now.
+ * Every link here goes somewhere real: the About and legal links are the
+ * pages an admin has written and marked for the footer, so the column is
+ * empty rather than broken when none exist yet.
  */
 export const Footer: React.FC = () => {
     const { user } = useAuth();
     const settings = useSiteSettings();
+    const block = useContentBlocks();
+    const pages = useFooterPages();
     const year = new Date().getFullYear();
 
     return (
@@ -20,10 +24,7 @@ export const Footer: React.FC = () => {
             <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
                 <div className="space-y-4">
                     <Logo />
-                    <p className="max-w-sm text-sm text-ink-2">
-                        Community recipes with deep South Asian roots, honest ratings, and a meal planner that turns a week of
-                        cooking into one merged shopping list.
-                    </p>
+                    <p className="max-w-sm text-sm text-ink-2">{block('footer_blurb')}</p>
                     <p className="text-xs text-ink-3">
                         Recipe data partly sourced from{' '}
                         <a href="https://www.themealdb.com" rel="noreferrer" target="_blank" className="underline decoration-line-strong underline-offset-4 hover:text-ink">
@@ -60,6 +61,9 @@ export const Footer: React.FC = () => {
                         {settings.contact_email && (
                             <li><a href={`mailto:${settings.contact_email}`} className={linkClass}>Contact</a></li>
                         )}
+                        {pages.map((page) => (
+                            <li key={page.slug}><Link to={`/p/${page.slug}`} className={linkClass}>{page.title}</Link></li>
+                        ))}
                     </ul>
                 </nav>
             </div>

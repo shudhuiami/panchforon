@@ -4,11 +4,13 @@ import { useSiteSettings } from '../site/useSiteSettings';
 import { ButtonLink } from '../../components/ui/Button';
 import { Reveal } from '../../components/motion/Reveal';
 import { Mark } from '../../components/layout/Logo';
+import { useContentBlocks } from '../content/useContent';
 
 /** The closing invitation: post a recipe, or join to be able to. */
 export const CtaBand: React.FC = () => {
     const { user } = useAuth();
     const settings = useSiteSettings();
+    const block = useContentBlocks();
 
     return (
         <section className="px-4 py-10 sm:px-6 lg:px-8 lg:py-16" aria-labelledby="cta-heading">
@@ -20,10 +22,10 @@ export const CtaBand: React.FC = () => {
                     <div>
                         <p className="text-xs font-semibold tracking-[0.22em] text-on-primary/70 uppercase">Share yours</p>
                         <h2 id="cta-heading" className="mt-3 max-w-2xl font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                            Cooked something great? Put it on the table.
+                            {block('home_cta_title')}
                         </h2>
                         <p className="mt-4 max-w-xl text-base text-on-primary/80 sm:text-lg">
-                            Post the recipe, get rated by people who actually cooked it, and help someone find their new favourite dinner.
+                            {block('home_cta_body')}
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
