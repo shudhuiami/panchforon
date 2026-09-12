@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
 use App\Filament\Widgets\PlatformOverview;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->brandName('Panchforon')
             ->defaultAvatarProvider(InitialsAvatarProvider::class)
@@ -43,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::hex('#5CA135'),
                 'warning' => Color::hex('#FB8818'),
             ])
+            ->font('Instrument Sans Variable', provider: LocalFontProvider::class)
             ->maxContentWidth(Width::ScreenTwoExtraLarge)
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
