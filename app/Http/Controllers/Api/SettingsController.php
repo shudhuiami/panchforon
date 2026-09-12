@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\SettingsRepository;
+use App\Services\Social\SocialProviders;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -12,7 +13,7 @@ use Illuminate\Http\JsonResponse;
  */
 class SettingsController extends Controller
 {
-    public function __invoke(SettingsRepository $settings): JsonResponse
+    public function __invoke(SettingsRepository $settings, SocialProviders $providers): JsonResponse
     {
         return response()->json([
             'data' => [
@@ -20,6 +21,7 @@ class SettingsController extends Controller
                 'contact_email' => $settings->string('contact_email'),
                 'registration_open' => $settings->boolean('registration_open', true),
                 'submissions_open' => $settings->boolean('submissions_open', true),
+                'social_logins' => $providers->enabled(),
             ],
         ]);
     }

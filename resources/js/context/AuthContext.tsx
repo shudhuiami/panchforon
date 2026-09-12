@@ -20,6 +20,8 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
     demoLogin: () => Promise<void>;
+    /** Trade a one-time social sign-in code for a session. */
+    completeSocialLogin: (code: string) => Promise<void>;
     logout: () => Promise<void>;
     /** Replace the cached account after the cook edits it. */
     setUser: (user: CurrentUser) => void;
@@ -119,6 +121,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(next);
     }, []);
 
+    const completeSocialLogin = async (code: string) => {
+        remember(await authApi.exchangeSocialCode(code));
+    };
+
     const logout = async () => {
         try {
             await authApi.logout();
@@ -131,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return (
         <AuthContext.Provider
-            value={{ user, token, isLoading, notice, clearNotice: () => setNotice(null), login, register, demoLogin, logout, setUser, adoptToken }}
+            value={{ user, token, isLoading, notice, clearNotice: () => setNotice(null), login, register, demoLogin, completeSocialLogin, logout, setUser, adoptToken }}
         >
             {children}
         </AuthContext.Provider>

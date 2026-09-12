@@ -22,6 +22,12 @@ export const authApi = {
     me: (): Promise<{ data: CurrentUser }> =>
         request<{ data: CurrentUser }>('/user'),
 
+    exchangeSocialCode: (code: string): Promise<AuthResponse> =>
+        request<AuthResponse>('/auth/social/exchange', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
+
     forgotPassword: (email: string): Promise<{ message: string }> =>
         request<{ message: string }>('/forgot-password', {
             method: 'POST',

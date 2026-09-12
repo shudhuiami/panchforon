@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Social sign-in
+    |--------------------------------------------------------------------------
+    |
+    | Both providers stay switched off until a client id and secret are set.
+    | The storefront hides the buttons, and the routes answer 404, so an
+    | unconfigured deployment behaves as though the feature does not exist.
+    |
+    */
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    ],
+
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+    ],
+
 ];

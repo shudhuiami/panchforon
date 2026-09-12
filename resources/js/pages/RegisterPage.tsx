@@ -4,6 +4,7 @@ import { Check, Lock, Mail, User, UserRoundX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../features/site/useSiteSettings';
 import { AuthLayout } from '../features/auth/AuthLayout';
+import { SocialLogins } from '../features/auth/SocialLogins';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Alert } from '../components/ui/Alert';
@@ -123,6 +124,8 @@ export const RegisterPage: React.FC = () => {
                     Create account
                 </Button>
             </form>
+            <SocialLogins />
+
             <p className="mt-6 text-center text-sm text-ink-2">
                 Already have an account?{' '}
                 <Link to="/login" className="font-semibold text-primary hover:underline">

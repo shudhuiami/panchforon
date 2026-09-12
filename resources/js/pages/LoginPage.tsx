@@ -4,6 +4,7 @@ import { Lock, Mail, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../features/site/useSiteSettings';
 import { AuthLayout } from '../features/auth/AuthLayout';
+import { SocialLogins } from '../features/auth/SocialLogins';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Alert } from '../components/ui/Alert';
@@ -104,6 +105,8 @@ export const LoginPage: React.FC = () => {
                     Sign in
                 </Button>
             </form>
+
+            <SocialLogins />
 
             <div className="my-6 flex items-center gap-3" aria-hidden="true">
                 <span className="h-px flex-1 bg-line" />

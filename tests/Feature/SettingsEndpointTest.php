@@ -31,5 +31,5 @@ test('the public settings endpoint never exposes other settings', function () {
 
     $json = $this->getJson('/api/settings')->json('data');
 
-    expect(array_keys($json))->toBe(['site_name', 'contact_email', 'registration_open', 'submissions_open']);
+    expect(array_keys($json))->toBe(['site_name', 'contact_email', 'registration_open', 'submissions_open', 'social_logins']);
 });

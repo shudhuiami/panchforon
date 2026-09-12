@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
 use App\Http\Controllers\Api\RecipeSaveController;
 use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\Api\SocialExchangeController;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,7 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
     Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+    Route::post('/auth/social/exchange', SocialExchangeController::class);
 });
 
 Route::get('/recipes', [RecipeController::class, 'index']);

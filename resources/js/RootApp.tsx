@@ -19,6 +19,7 @@ import { CookPage } from './pages/CookPage';
 import { ContentPage } from './pages/ContentPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { SocialCallbackPage } from './pages/SocialCallbackPage';
 import { ShoppingListPage } from './pages/ShoppingListPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -63,6 +64,7 @@ export const RootApp: React.FC = () => (
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                             <Route path="/reset-password" element={<ResetPasswordPage />} />
+                            <Route path="/login/social" element={<SocialCallbackPage />} />
                         </Route>
                     </Routes>
                 </div>

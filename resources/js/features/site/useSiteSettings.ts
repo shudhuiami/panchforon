@@ -7,6 +7,7 @@ const FALLBACK: SiteSettings = {
     contact_email: '',
     registration_open: true,
     submissions_open: true,
+    social_logins: [],
 };
 
 /**

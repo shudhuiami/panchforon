@@ -16,11 +16,18 @@ export interface CurrentUser extends User {
     ratings_count?: number;
 }
 
+export interface SocialLogin {
+    key: string;
+    label: string;
+}
+
 export interface SiteSettings {
     site_name: string;
     contact_email: string;
     registration_open: boolean;
     submissions_open: boolean;
+    /** Providers this deployment has configured; empty when none are. */
+    social_logins: SocialLogin[];
 }
 
 export interface AuthResponse {
