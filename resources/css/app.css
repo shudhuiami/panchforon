@@ -115,23 +115,6 @@
     --color-plum: var(--plum);
     --color-plum-deep: var(--plum-deep);
     --color-plum-soft: var(--plum-soft);
-
-    /* Transitional aliases — same semantic role, dark values. Delete after Phase B. */
-    --color-saffron: var(--primary);
-    --color-saffron-deep: var(--primary-deep);
-    --color-saffron-soft: var(--primary-soft);
-    --color-chili: var(--hot);
-    --color-chili-deep: var(--hot-deep);
-    --color-chili-soft: var(--hot-soft);
-    --color-ink-muted: var(--ink-2);
-    --color-ink-faint: var(--ink-3);
-    --color-paper: var(--surface);
-    --color-card: var(--surface);
-    --color-cream: var(--canvas);
-    --color-cream-2: var(--surface);
-    --color-border-subtle: var(--line);
-    --color-border-strong: var(--line-strong);
-
     /* Radius — pills for controls, generous corners for cards */
     --radius-sm: 0.5rem;
     --radius-md: 0.875rem;
@@ -153,13 +136,6 @@
     --shadow-glow-mint: 0 12px 32px -8px rgba(42, 211, 177, 0.45);
     --shadow-glow-plum: 0 12px 32px -8px rgba(155, 133, 255, 0.5);
     --shadow-glow-turmeric: 0 12px 32px -8px rgba(255, 196, 46, 0.5);
-    --shadow-glow-saffron: var(--shadow-glow-primary);
-    --shadow-glow-chili: var(--shadow-glow-hot);
-    --shadow-pop: 4px 4px 0 0 var(--primary);
-    --shadow-pop-sm: 2px 2px 0 0 var(--primary);
-    --shadow-pop-saffron: 5px 5px 0 0 var(--primary);
-    --shadow-pop-mint: 5px 5px 0 0 var(--mint);
-    --shadow-pop-chili: 5px 5px 0 0 var(--hot);
     --shadow-focus: 0 0 0 4px rgba(252, 113, 0, 0.4);
 
     /* Easing */
@@ -206,22 +182,8 @@
         background-clip: text;
         color: transparent;
     }
-    .text-sunrise {
-        background: linear-gradient(95deg, var(--turmeric) 0%, var(--primary) 60%, var(--hot) 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
 
     /* Mesh + gradient backgrounds */
-    .bg-mesh {
-        background-color: var(--canvas);
-        background-image:
-            radial-gradient(40rem 28rem at 15% 20%, rgba(252, 113, 0, 0.22), transparent 60%),
-            radial-gradient(32rem 24rem at 85% 10%, rgba(155, 133, 255, 0.18), transparent 60%),
-            radial-gradient(36rem 30rem at 70% 90%, rgba(42, 211, 177, 0.14), transparent 60%),
-            radial-gradient(28rem 22rem at 20% 90%, rgba(244, 95, 103, 0.12), transparent 60%);
-    }
     /* Gradients and dot patterns compose: both declare the same two-layer image, pattern over gradient. */
     .bg-spice-gradient { --bg-gradient: linear-gradient(120deg, var(--primary), var(--hot) 55%, var(--plum)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
     .bg-sunrise-gradient { --bg-gradient: linear-gradient(120deg, var(--turmeric), var(--primary) 60%, var(--hot)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
@@ -240,35 +202,12 @@
         background-image: var(--bg-pattern), var(--bg-gradient, none);
         background-size: 18px 18px, auto;
     }
-    .bg-stripes {
-        background-image: repeating-linear-gradient(-45deg, rgba(255, 240, 224, 0.06) 0 10px, transparent 10px 20px);
-    }
-
-    /* "Pop" surfaces: a firm edge plus an offset plate of colour */
-    .pop { border: 2px solid var(--line-strong); box-shadow: var(--shadow-pop); }
-    .pop-sm { border: 2px solid var(--line-strong); box-shadow: var(--shadow-pop-sm); }
-    .pop-saffron { border: 2px solid var(--line-strong); box-shadow: var(--shadow-pop-saffron); }
-    .pop-mint { border: 2px solid var(--line-strong); box-shadow: var(--shadow-pop-mint); }
-    .pop-chili { border: 2px solid var(--line-strong); box-shadow: var(--shadow-pop-chili); }
-    .pop-hover { transition: transform .2s var(--ease-out-expo), box-shadow .2s var(--ease-out-expo); }
-    .pop-hover:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 0 var(--primary); }
 
     /* Glass */
     .glass,
-    .glass-dark {
-        background: rgba(20, 16, 13, 0.66);
-        backdrop-filter: blur(18px) saturate(160%);
-        -webkit-backdrop-filter: blur(18px) saturate(160%);
-        border: 1px solid var(--line);
-    }
 
-    /* Sticker (slightly rotated badge) */
-    .sticker { transform: rotate(-3deg); }
-    .sticker-r { transform: rotate(3deg); }
 
     /* Blob shapes */
-    .blob-1 { border-radius: 62% 38% 46% 54% / 55% 47% 53% 45%; }
-    .blob-2 { border-radius: 38% 62% 55% 45% / 45% 55% 45% 55%; }
 
     /* Hide scrollbar for horizontal scrollers */
     .no-scrollbar::-webkit-scrollbar { display: none; }
