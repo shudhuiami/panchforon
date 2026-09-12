@@ -2,7 +2,7 @@ import React from 'react';
 import { useInView } from './useInView';
 
 interface RevealProps extends React.HTMLAttributes<HTMLElement> {
-    as?: 'div' | 'section' | 'article' | 'li' | 'header';
+    as?: 'div' | 'section' | 'article' | 'aside' | 'li' | 'ul' | 'ol' | 'header' | 'footer';
     /** Milliseconds, for staggering siblings. */
     delay?: number;
 }
