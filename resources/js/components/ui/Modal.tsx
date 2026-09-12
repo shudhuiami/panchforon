@@ -48,7 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
         >
             {/* Ink glass backdrop */}
             <div
-                className="fixed inset-0 bg-ink/60 backdrop-blur-md animate-fade-in"
+                className="fixed inset-0 bg-canvas/70 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
                 aria-hidden="true"
             />

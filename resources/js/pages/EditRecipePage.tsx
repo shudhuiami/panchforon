@@ -115,7 +115,7 @@ export const EditRecipePage: React.FC = () => {
                 <div className="relative space-y-4">
                     <Breadcrumb
                         items={[
-                            { label: 'Recipes', to: '/' },
+                            { label: 'Recipes', to: '/recipes' },
                             { label: recipe.title, to: `/recipes/${recipe.slug}` },
                             { label: 'Edit' },
                         ]}

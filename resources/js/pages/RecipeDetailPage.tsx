@@ -227,8 +227,8 @@ export const RecipeDetailPage: React.FC = () => {
                 <div className="inline-flex max-w-full rounded-full bg-paper border border-line px-4 py-2 shadow-sm">
                     <Breadcrumb
                         items={[
-                            { label: 'Recipes', to: '/' },
-                            { label: recipe.cuisine || 'Dishes', to: recipe.cuisine ? `/?cuisine=${encodeURIComponent(recipe.cuisine)}` : '/' },
+                            { label: 'Recipes', to: '/recipes' },
+                            { label: recipe.cuisine || 'Dishes', to: recipe.cuisine ? `/recipes?cuisine=${encodeURIComponent(recipe.cuisine)}` : '/' },
                             { label: recipe.title },
                         ]}
                     />
@@ -267,7 +267,7 @@ export const RecipeDetailPage: React.FC = () => {
                         aria-hidden="true"
                     />
                     <div
-                        className="absolute -bottom-8 -right-6 w-40 h-40 sm:w-52 sm:h-52 bg-plum/25 blob-2 -z-10 animate-float animation-delay-300"
+                        className="absolute -bottom-8 right-0 w-40 h-40 sm:w-52 sm:h-52 bg-plum/25 blob-2 -z-10 animate-float animation-delay-300"
                         aria-hidden="true"
                     />
 

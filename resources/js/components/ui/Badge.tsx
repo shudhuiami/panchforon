@@ -44,3 +44,14 @@ export const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', siz
         {children}
     </span>
 );
+
+/** A small numeric marker for nav items; hidden at zero. */
+export const CountBadge: React.FC<{ count: number; className?: string }> = ({ count, className = '' }) =>
+    count > 0 ? (
+        <span
+            className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-none text-on-primary ${className}`}
+            aria-label={`${count} in your plan`}
+        >
+            {count > 99 ? '99+' : count}
+        </span>
+    ) : null;

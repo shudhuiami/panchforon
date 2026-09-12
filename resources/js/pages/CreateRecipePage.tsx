@@ -113,7 +113,7 @@ export const CreateRecipePage: React.FC = () => {
                 <div className="absolute -bottom-20 right-1/3 h-48 w-48 blob-1 bg-saffron/30 blur-2xl" />
 
                 <div className="relative space-y-4">
-                    <Breadcrumb items={[{ label: 'Recipes', to: '/' }, { label: 'New recipe' }]} />
+                    <Breadcrumb items={[{ label: 'Recipes', to: '/recipes' }, { label: 'New recipe' }]} />
 
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                         <div className="flex items-start gap-4">
