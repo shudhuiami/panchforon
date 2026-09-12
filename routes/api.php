@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\Route;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
 Route::get('/recipes', [RecipeController::class, 'index']);
 Route::get('/recipes/{slug}', [RecipeController::class, 'show'])->where('slug', '[a-z0-9\-]+');

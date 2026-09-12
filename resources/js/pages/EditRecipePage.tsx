@@ -10,19 +10,18 @@ import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { PencilLine, ShieldAlert, SearchX, ArrowLeft, Eye } from 'lucide-react';
 
 export const EditRecipePage: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const recipeId = parseInt(id || '0');
-
-    // Fetch existing recipe by ID/slug
+    // The public show endpoint resolves slugs and already lets an author read
+    // their own unpublished recipe, so no separate by-id lookup is needed.
     const { data, isLoading } = useQuery({
-        queryKey: ['recipe', recipeId],
-        queryFn: () => recipesApi.get(id!),
-        enabled: !!id,
+        queryKey: ['recipe', slug],
+        queryFn: () => recipesApi.get(slug!),
+        enabled: !!slug,
     });
 
     const recipe = data?.data;
@@ -38,7 +37,7 @@ export const EditRecipePage: React.FC = () => {
                     raw_text: i.raw_text.trim() || undefined,
                 }));
 
-            return recipesApi.update(recipeId, {
+            return recipesApi.update(recipe!.id, {
                 title: formData.title.trim(),
                 cuisine: formData.cuisine.trim() || undefined,
                 category: formData.category.trim() || undefined,
@@ -50,8 +49,7 @@ export const EditRecipePage: React.FC = () => {
             });
         },
         onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['recipe', recipeId] });
-            queryClient.invalidateQueries({ queryKey: ['recipe', res.data.slug] });
+            queryClient.invalidateQueries({ queryKey: ['recipe'] });
             queryClient.invalidateQueries({ queryKey: ['recipes'] });
             navigate(`/recipes/${res.data.slug}`);
         },

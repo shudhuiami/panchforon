@@ -53,7 +53,7 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
                 review: review.trim() || undefined,
             }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recipe', recipeId] });
+            queryClient.invalidateQueries({ queryKey: ['recipe'] });
             queryClient.invalidateQueries({ queryKey: ['recipes'] });
             onClose();
         },
@@ -65,7 +65,7 @@ export const RatingReviewModal: React.FC<RatingReviewModalProps> = ({
     const deleteMutation = useMutation({
         mutationFn: () => ratingsApi.delete(recipeId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recipe', recipeId] });
+            queryClient.invalidateQueries({ queryKey: ['recipe'] });
             queryClient.invalidateQueries({ queryKey: ['recipes'] });
             onClose();
         },

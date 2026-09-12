@@ -13,6 +13,7 @@ import { ShoppingListPage } from './pages/ShoppingListPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { RequireAuth } from './features/auth/RequireAuth';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -34,11 +35,13 @@ export const RootApp: React.FC = () => {
                         <main className="flex-1 w-full">
                             <Routes>
                                 <Route path="/" element={<HomePage />} />
-                                <Route path="/recipes/create" element={<CreateRecipePage />} />
                                 <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
-                                <Route path="/recipes/:id/edit" element={<EditRecipePage />} />
-                                <Route path="/meal-plan" element={<MealPlanPage />} />
-                                <Route path="/shopping-list" element={<ShoppingListPage />} />
+                                <Route element={<RequireAuth />}>
+                                    <Route path="/recipes/create" element={<CreateRecipePage />} />
+                                    <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
+                                    <Route path="/meal-plan" element={<MealPlanPage />} />
+                                    <Route path="/shopping-list" element={<ShoppingListPage />} />
+                                </Route>
                                 <Route path="/login" element={<LoginPage />} />
                                 <Route path="/register" element={<RegisterPage />} />
                                 <Route path="*" element={<NotFoundPage />} />

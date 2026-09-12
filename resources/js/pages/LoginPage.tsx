@@ -18,7 +18,7 @@ const FLOATING_CHIPS = [
 ];
 
 export const LoginPage: React.FC = () => {
-    const { login, demoLogin } = useAuth();
+    const { login, demoLogin, notice, clearNotice } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -198,6 +198,11 @@ export const LoginPage: React.FC = () => {
                             <div className="h-px flex-1 bg-line-strong" />
                         </div>
 
+                        {notice && (
+                            <Alert variant="warning" onClose={clearNotice} className="mb-4 animate-pop-in">
+                                {notice.message}
+                            </Alert>
+                        )}
                         {error && (
                             <Alert
                                 variant="error"

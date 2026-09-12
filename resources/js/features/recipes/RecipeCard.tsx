@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Users, Plus, Check, Sparkles, ChefHat, Loader2 } from 'lucide-react';
 import { RecipeList } from '../../types/api';
 import { StarRating } from '../../components/ui/StarRating';
@@ -25,6 +25,7 @@ const FALLBACK_GRADIENTS = [
 export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }) => {
     const { token } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const [justAdded, setJustAdded] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -43,7 +44,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
         e.stopPropagation();
 
         if (!token) {
-            navigate('/login');
+            navigate('/login', { state: { from: location } });
             return;
         }
 

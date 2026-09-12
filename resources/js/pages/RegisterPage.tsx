@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -17,6 +17,8 @@ const FLOATING_CHIPS = [
 export const RegisterPage: React.FC = () => {
     const { register, demoLogin } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/meal-plan';
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -44,7 +46,7 @@ export const RegisterPage: React.FC = () => {
 
         try {
             await register(name, email, password);
-            navigate('/meal-plan');
+            navigate(from, { replace: true });
         } catch (err: any) {
             setError(err.message || 'Failed to create account.');
         } finally {
@@ -56,7 +58,7 @@ export const RegisterPage: React.FC = () => {
         setIsDemoLoading(true);
         try {
             await demoLogin();
-            navigate('/meal-plan');
+            navigate(from, { replace: true });
         } catch (err: any) {
             setError(err.message || 'Failed to authenticate with demo account.');
         } finally {

@@ -16,7 +16,11 @@ class RecipeDetailResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $user = $request->user();
+        /**
+         * The detail route has no auth middleware, so the default guard never
+         * sees a bearer token; ask the sanctum guard explicitly.
+         */
+        $user = $request->user('sanctum');
 
         return [
             'id' => $this->id,

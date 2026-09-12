@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Services\SettingsRepository;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /**
+         * Credential endpoints get a tight per-IP budget so a password list
+         * cannot be replayed against them. Everything else keeps the default.
+         */
+        RateLimiter::for('auth', fn (Request $request): Limit => Limit::perMinute(10)->by($request->ip()));
     }
 }

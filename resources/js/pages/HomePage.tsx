@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { recipesApi } from '../api/recipes';
 import { CuisineFilters } from '../features/recipes/CuisineFilters';
@@ -22,6 +22,7 @@ import {
     Shuffle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useRecipeFilters } from '../features/recipes/useRecipeFilters';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { RecipeList } from '../types/api';
@@ -111,12 +112,11 @@ const HOW_IT_WORKS = [
 
 export const HomePage: React.FC = () => {
     const { user, demoLogin } = useAuth();
-    const [search, setSearch] = useState('');
-    const [searchDraft, setSearchDraft] = useState('');
-    const [selectedCuisine, setSelectedCuisine] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [selectedSort, setSelectedSort] = useState<'bayesian' | 'rating' | 'latest' | 'title'>('bayesian');
-    const [page, setPage] = useState(1);
+    const filters = useRecipeFilters();
+    const { search, cuisine: selectedCuisine, category: selectedCategory, sort: selectedSort, page } = filters;
+    const setSelectedSort = filters.setSort;
+    const setPage = filters.setPage;
+    const [searchDraft, setSearchDraft] = useState(search);
     const [isDemoLoading, setIsDemoLoading] = useState(false);
     const [activeHeroIndex, setActiveHeroIndex] = useState(0);
 
@@ -166,29 +166,22 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    // The hero search box holds a draft until submitted; the URL holds the truth.
+    useEffect(() => {
+        setSearchDraft(search);
+    }, [search]);
+
     const handleResetFilters = () => {
-        setSearch('');
+        filters.reset();
         setSearchDraft('');
-        setSelectedCuisine('');
-        setSelectedCategory('');
-        setSelectedSort('bayesian');
-        setPage(1);
     };
 
-    const handleCuisineSelect = (cuisine: string) => {
-        setSelectedCuisine(cuisine);
-        setPage(1);
-    };
-
-    const handleCategorySelect = (category: string) => {
-        setSelectedCategory(category);
-        setPage(1);
-    };
+    const handleCuisineSelect = (cuisine: string) => filters.setCuisine(cuisine);
+    const handleCategorySelect = (category: string) => filters.setCategory(category);
 
     const handleSearchChange = (value: string) => {
-        setSearch(value);
+        filters.setSearch(value);
         setSearchDraft(value);
-        setPage(1);
     };
 
     const handleSearchSubmit = (e: React.FormEvent) => {

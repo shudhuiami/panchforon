@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recipesApi } from '../api/recipes';
 import { mealPlanApi } from '../api/mealPlan';
@@ -62,6 +62,7 @@ const initialsOf = (name?: string | null): string => {
 export const RecipeDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const { user, token } = useAuth();
 
@@ -106,7 +107,7 @@ export const RecipeDetailPage: React.FC = () => {
 
     const handleAddToPlan = () => {
         if (!token) {
-            navigate('/login');
+            navigate('/login', { state: { from: location } });
             return;
         }
         addToPlanMutation.mutate();
@@ -211,7 +212,7 @@ export const RecipeDetailPage: React.FC = () => {
 
     const openRatingModal = () => {
         if (!token) {
-            navigate('/login');
+            navigate('/login', { state: { from: location } });
             return;
         }
         setIsRatingModalOpen(true);
@@ -227,7 +228,7 @@ export const RecipeDetailPage: React.FC = () => {
                     <Breadcrumb
                         items={[
                             { label: 'Recipes', to: '/' },
-                            { label: recipe.cuisine || 'Dishes', to: `/?cuisine=${recipe.cuisine}` },
+                            { label: recipe.cuisine || 'Dishes', to: recipe.cuisine ? `/?cuisine=${encodeURIComponent(recipe.cuisine)}` : '/' },
                             { label: recipe.title },
                         ]}
                     />
@@ -235,7 +236,7 @@ export const RecipeDetailPage: React.FC = () => {
 
                 {isAuthor && (
                     <div className="flex items-center gap-2 shrink-0">
-                        <Link to={`/recipes/${recipe.id}/edit`}>
+                        <Link to={`/recipes/${recipe.slug}/edit`}>
                             <Button variant="outline" size="sm" className="rounded-full">
                                 <Edit3 className="w-3.5 h-3.5" />
                                 Edit recipe
