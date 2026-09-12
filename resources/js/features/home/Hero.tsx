@@ -148,15 +148,24 @@ export const Hero: React.FC<HeroProps> = ({ featured, cuisines, stats, isLoading
                         id="hero-heading"
                         className="mt-6 font-display text-[2.9rem] leading-[0.98] font-semibold tracking-[-0.02em] text-ink sm:text-6xl lg:text-7xl xl:text-[5.6rem]"
                     >
+                        {/*
+                          Each word animates in its own clipped box, but the
+                          spaces between them are real text nodes: without
+                          them the heading reads as one run-on word to a
+                          screen reader and copies that way too.
+                        */}
                         {HEADLINE.map(({ word, spice }, index) => (
-                            <span key={word} className="mr-[0.22em] -mb-[0.14em] inline-block overflow-hidden pb-[0.14em] align-bottom">
-                                <span
-                                    className={`headline-word ${spice ? 'text-spice font-medium italic' : ''}`}
-                                    style={{ animationDelay: `${120 + index * 70}ms` }}
-                                >
-                                    {word}
+                            <React.Fragment key={word}>
+                                {index > 0 && ' '}
+                                <span className="-mb-[0.14em] inline-block overflow-hidden pb-[0.14em] align-bottom">
+                                    <span
+                                        className={`headline-word ${spice ? 'text-spice font-medium italic' : ''}`}
+                                        style={{ animationDelay: `${120 + index * 70}ms` }}
+                                    >
+                                        {word}
+                                    </span>
                                 </span>
-                            </span>
+                            </React.Fragment>
                         ))}
                     </h1>
 
