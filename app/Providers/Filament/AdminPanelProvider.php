@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
 use App\Filament\Widgets\PlatformOverview;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->brandName('Panchforon')
             ->defaultAvatarProvider(InitialsAvatarProvider::class)
@@ -43,6 +45,14 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::hex('#5CA135'),
                 'warning' => Color::hex('#FB8818'),
             ])
+            /**
+             * Both faces ship in the storefront bundle the theme imports, so
+             * these are declared through Filament's own API: it writes the
+             * font variables inline, which would otherwise win over anything
+             * the stylesheet sets.
+             */
+            ->font('Instrument Sans Variable', provider: LocalFontProvider::class)
+            ->serifFont('Fraunces Variable', provider: LocalFontProvider::class)
             ->maxContentWidth(Width::ScreenTwoExtraLarge)
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
@@ -50,7 +60,11 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            /**
+             * Widgets are registered explicitly rather than discovered: the
+             * report widgets belong to the Reports page, and discovery would
+             * also drop them onto the dashboard.
+             */
             ->widgets([
                 PlatformOverview::class,
             ])

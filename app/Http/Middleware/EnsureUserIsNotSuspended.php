@@ -27,6 +27,7 @@ class EnsureUserIsNotSuspended
         if ($user instanceof User && $user->isSuspended()) {
             return response()->json([
                 'message' => 'Your account has been suspended.',
+                'code' => 'account_suspended',
                 'reason' => $user->suspension_reason,
             ], Response::HTTP_FORBIDDEN);
         }

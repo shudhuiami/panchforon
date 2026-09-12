@@ -10,91 +10,54 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
     rightIcon?: React.ReactNode;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(({
-    label,
-    helperText,
-    errorMessage,
-    hasError = false,
-    leftIcon,
-    rightIcon,
-    className = '',
-    id,
-    disabled,
-    ...props
-}, ref) => {
-    const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
-    const isInvalid = hasError || !!errorMessage;
+export const fieldLabelClass = 'mb-2 block text-xs font-semibold tracking-[0.14em] text-ink-3 uppercase';
 
-    return (
-        <div className="w-full group/field">
-            {label && (
-                <label
-                    htmlFor={inputId}
-                    className="block text-xs font-bold uppercase tracking-wide text-ink-2 mb-2 transition-colors group-focus-within/field:text-saffron-deep"
-                >
-                    {label}
-                </label>
-            )}
+/** Shared box styling for text fields, so inputs and textareas match. */
+export const fieldClass = (invalid: boolean): string =>
+    `w-full rounded-2xl border bg-surface-2 text-ink outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-ink-3 disabled:cursor-not-allowed disabled:opacity-60 ${
+        invalid ? 'border-hot focus:border-hot focus:ring-4 focus:ring-hot/15' : 'border-line hover:border-line-strong focus:border-primary/70 focus:ring-4 focus:ring-primary/15'
+    }`;
 
-            <div className="relative flex items-center">
-                {leftIcon && (
-                    <div
-                        className={`absolute left-4 pointer-events-none flex items-center transition-colors ${
-                            isInvalid ? 'text-chili-deep' : 'text-ink-3 group-focus-within/field:text-saffron-deep'
-                        }`}
-                    >
-                        {leftIcon}
-                    </div>
+export const FieldMessage: React.FC<{ id?: string; error?: string; helper?: string }> = ({ id, error, helper }) =>
+    error ? (
+        <p id={id ? `${id}-error` : undefined} className="mt-2 flex items-center gap-1.5 text-sm text-hot">
+            <CircleAlert className="size-4 shrink-0" aria-hidden="true" />
+            {error}
+        </p>
+    ) : helper ? (
+        <p id={id ? `${id}-helper` : undefined} className="mt-2 text-sm text-ink-3">
+            {helper}
+        </p>
+    ) : null;
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+    ({ label, helperText, errorMessage, hasError = false, leftIcon, rightIcon, className = '', id, ...props }, ref) => {
+        const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+        const isInvalid = hasError || !!errorMessage;
+
+        return (
+            <div className="w-full">
+                {label && (
+                    <label htmlFor={inputId} className={fieldLabelClass}>
+                        {label}
+                    </label>
                 )}
-
-                <input
-                    ref={ref}
-                    id={inputId}
-                    disabled={disabled}
-                    aria-invalid={isInvalid}
-                    aria-describedby={
-                        errorMessage ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
-                    }
-                    className={`w-full min-h-12 bg-paper text-ink font-medium placeholder:text-ink-3 placeholder:font-normal border-2 rounded-2xl px-4 py-3 text-base transition-all duration-200 outline-none
-                        ${leftIcon ? 'pl-11' : ''}
-                        ${rightIcon ? 'pr-11' : ''}
-                        ${
-                            isInvalid
-                                ? 'border-chili bg-chili-soft/30 focus:border-chili focus:ring-4 focus:ring-chili/20'
-                                : 'border-line hover:border-line-strong focus:border-saffron focus:ring-4 focus:ring-saffron/20'
-                        }
-                        disabled:bg-cream-2 disabled:text-ink-3 disabled:border-line disabled:cursor-not-allowed
-                        focus-visible:outline-none
-                        ${className}`}
-                    {...props}
-                />
-
-                {rightIcon && (
-                    <div
-                        className={`absolute right-4 flex items-center transition-colors ${
-                            isInvalid ? 'text-chili-deep' : 'text-ink-3'
-                        }`}
-                    >
-                        {rightIcon}
-                    </div>
-                )}
+                <div className="relative flex items-center">
+                    {leftIcon && <span className={`pointer-events-none absolute left-4 flex items-center ${isInvalid ? 'text-hot' : 'text-ink-3'}`}>{leftIcon}</span>}
+                    <input
+                        ref={ref}
+                        id={inputId}
+                        aria-invalid={isInvalid}
+                        aria-describedby={errorMessage ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+                        className={`${fieldClass(isInvalid)} min-h-12 px-4 py-3 text-base ${leftIcon ? 'pl-11' : ''} ${rightIcon ? 'pr-11' : ''} ${className}`}
+                        {...props}
+                    />
+                    {rightIcon && <span className={`absolute right-4 flex items-center ${isInvalid ? 'text-hot' : 'text-ink-3'}`}>{rightIcon}</span>}
+                </div>
+                <FieldMessage id={inputId} error={errorMessage} helper={helperText} />
             </div>
-
-            {errorMessage ? (
-                <p
-                    id={`${inputId}-error`}
-                    className="mt-2 text-sm text-chili-deep font-semibold flex items-center gap-1.5 animate-fade-in"
-                >
-                    <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    {errorMessage}
-                </p>
-            ) : helperText ? (
-                <p id={`${inputId}-helper`} className="mt-2 text-sm text-ink-3">
-                    {helperText}
-                </p>
-            ) : null}
-        </div>
-    );
-});
+        );
+    },
+);
 
 Input.displayName = 'Input';

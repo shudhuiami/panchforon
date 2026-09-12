@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\HomeFeed;
 use Database\Factories\RecipeStatFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +51,15 @@ class RecipeStat extends Model
             'bayesian_score' => 'float',
             'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The home feed is cached; any change here must show up on the next request.
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn () => HomeFeed::forget());
+        static::deleted(fn () => HomeFeed::forget());
     }
 
     /**

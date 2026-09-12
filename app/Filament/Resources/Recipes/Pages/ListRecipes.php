@@ -4,19 +4,41 @@ namespace App\Filament\Resources\Recipes\Pages;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Filament\Actions\CatalogueActions;
 use App\Filament\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
+use Filament\Actions\ActionGroup;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListRecipes extends ListRecords
 {
     protected static string $resource = RecipeResource::class;
 
+    /**
+     * Catalogue-wide jobs live here rather than on their own navigation
+     * items: this is the screen the catalogue is on.
+     */
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            CatalogueActions::importFromMealDb(),
+
+            /**
+             * Grouped so the header stays one row on a phone; three separate
+             * buttons wrapped onto two and pushed the table down.
+             */
+            ActionGroup::make([
+                CatalogueActions::renameTaxonomy('cuisine'),
+                CatalogueActions::renameTaxonomy('category'),
+            ])
+                ->label('Tidy up')
+                ->icon(Heroicon::OutlinedTag)
+                ->color('gray')
+                ->button(),
+        ];
     }
 
     /**

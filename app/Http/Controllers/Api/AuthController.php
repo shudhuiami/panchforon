@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\CurrentUserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +28,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
+            'user' => new CurrentUserResource($user->loadCount(['recipes', 'ratings'])),
             'token' => $token,
         ], 201);
     }
@@ -59,7 +59,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
+            'user' => new CurrentUserResource($user->loadCount(['recipes', 'ratings'])),
             'token' => $token,
         ]);
     }
@@ -81,11 +81,11 @@ class AuthController extends Controller
     /**
      * Get currently authenticated user details.
      */
-    public function user(Request $request): UserResource
+    public function user(Request $request): CurrentUserResource
     {
         /** @var User $user */
         $user = $request->user();
 
-        return new UserResource($user);
+        return new CurrentUserResource($user->loadCount(['recipes', 'ratings']));
     }
 }

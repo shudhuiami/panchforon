@@ -19,6 +19,7 @@ class RecipeListResource extends JsonResource
         return [
             'id' => $this->id,
             'source' => $this->source->value,
+            'moderation_status' => $this->moderation_status->value,
             'title' => $this->title,
             'slug' => $this->slug,
             'cuisine' => $this->cuisine,

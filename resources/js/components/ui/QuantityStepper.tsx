@@ -13,6 +13,15 @@ export interface QuantityStepperProps {
     ariaLabel?: string;
 }
 
+const SIZES = {
+    sm: { container: 'h-9 gap-0.5 p-1', button: 'size-7', input: 'w-9 text-sm', icon: 'size-3' },
+    md: { container: 'h-12 gap-1 p-1.5', button: 'size-9', input: 'w-11 text-lg', icon: 'size-3.5' },
+    lg: { container: 'h-14 gap-1 p-1.5', button: 'size-11', input: 'w-14 text-2xl', icon: 'size-4' },
+};
+
+const buttonClass =
+    'flex cursor-pointer items-center justify-center rounded-full bg-surface-3 text-ink transition-colors hover:bg-primary hover:text-on-primary active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-surface-3 disabled:hover:text-ink focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-primary';
+
 export const QuantityStepper: React.FC<QuantityStepperProps> = ({
     value,
     onChange,
@@ -24,69 +33,20 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
     className = '',
     ariaLabel = 'Quantity',
 }) => {
-    const handleDecrement = () => {
-        if (!disabled && value > min) {
-            onChange(Math.max(min, value - step));
-        }
-    };
-
-    const handleIncrement = () => {
-        if (!disabled && value < max) {
-            onChange(Math.min(max, value + step));
-        }
-    };
-
-    const handleDirectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const parsed = parseInt(e.target.value, 10);
-        if (!isNaN(parsed)) {
-            const clamped = Math.min(Math.max(parsed, min), max);
-            onChange(clamped);
-        }
-    };
-
-    const sizeStyles = {
-        sm: {
-            container: 'h-9 p-1 gap-0.5',
-            btn: 'w-7 h-7',
-            input: 'w-9 text-sm',
-            icon: 'w-3 h-3',
-        },
-        md: {
-            container: 'h-12 p-1.5 gap-1',
-            btn: 'w-9 h-9',
-            input: 'w-11 text-lg',
-            icon: 'w-3.5 h-3.5',
-        },
-        lg: {
-            container: 'h-14 p-1.5 gap-1',
-            btn: 'w-11 h-11',
-            input: 'w-14 text-2xl',
-            icon: 'w-4 h-4',
-        },
-    };
-
-    const isMin = value <= min;
-    const isMax = value >= max;
-
-    const btnBase =
-        'flex items-center justify-center rounded-full bg-saffron-soft text-saffron-deep hover:bg-saffron hover:text-ink active:scale-90 transition-all duration-150 cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-saffron-soft disabled:hover:text-saffron-deep disabled:active:scale-100 focus-visible:outline-3 focus-visible:outline-saffron focus-visible:z-10';
+    const clamp = (next: number) => Math.min(Math.max(next, min), max);
+    const sizes = SIZES[size];
 
     return (
-        <div
-            className={`inline-flex items-center rounded-full border-2 border-line-strong bg-paper ${sizeStyles[size].container} ${
-                disabled ? 'opacity-50 cursor-not-allowed bg-cream-2' : ''
-            } ${className}`}
-        >
+        <div className={`inline-flex items-center rounded-full border border-line bg-surface-2 ${sizes.container} ${disabled ? 'opacity-50' : ''} ${className}`}>
             <button
                 type="button"
-                onClick={handleDecrement}
-                disabled={disabled || isMin}
+                onClick={() => onChange(clamp(value - step))}
+                disabled={disabled || value <= min}
                 aria-label={`Decrease ${ariaLabel}`}
-                className={`${sizeStyles[size].btn} ${btnBase}`}
+                className={`${sizes.button} ${buttonClass}`}
             >
-                <Minus className={`${sizeStyles[size].icon} stroke-[3]`} />
+                <Minus className={`${sizes.icon} stroke-[3]`} aria-hidden="true" />
             </button>
-
             <input
                 type="number"
                 value={value}
@@ -94,19 +54,21 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
                 max={max}
                 step={step}
                 disabled={disabled}
-                onChange={handleDirectChange}
+                onChange={(e) => {
+                    const parsed = Number.parseInt(e.target.value, 10);
+                    if (!Number.isNaN(parsed)) onChange(clamp(parsed));
+                }}
                 aria-label={ariaLabel}
-                className={`${sizeStyles[size].input} h-full text-center font-display font-extrabold text-ink bg-transparent tabular-nums focus-visible:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                className={`${sizes.input} h-full bg-transparent text-center font-display font-semibold text-ink tabular-nums focus-visible:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
             />
-
             <button
                 type="button"
-                onClick={handleIncrement}
-                disabled={disabled || isMax}
+                onClick={() => onChange(clamp(value + step))}
+                disabled={disabled || value >= max}
                 aria-label={`Increase ${ariaLabel}`}
-                className={`${sizeStyles[size].btn} ${btnBase}`}
+                className={`${sizes.button} ${buttonClass}`}
             >
-                <Plus className={`${sizeStyles[size].icon} stroke-[3]`} />
+                <Plus className={`${sizes.icon} stroke-[3]`} aria-hidden="true" />
             </button>
         </div>
     );

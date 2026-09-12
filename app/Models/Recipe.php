@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Services\HomeFeed;
 use Database\Factories\RecipeFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -55,6 +57,15 @@ class Recipe extends Model
     }
 
     /**
+     * The home feed is cached; any change here must show up on the next request.
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn () => HomeFeed::forget());
+        static::deleted(fn () => HomeFeed::forget());
+    }
+
+    /**
      * Only recipes from TheMealDB are exempt from moderation; anything a user
      * submitted can be held back, unpublished, or removed by an admin.
      */
@@ -95,6 +106,14 @@ class Recipe extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsToMany<User, $this>
+     */
+    public function savedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'recipe_saves')->withTimestamps();
     }
 
     /**

@@ -1,0 +1,121 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/*
+|--------------------------------------------------------------------------
+| Panchforon admin theme
+|--------------------------------------------------------------------------
+|
+| The same two typefaces and the same warm palette as the storefront, so the
+| panel reads as part of the product rather than a stock dashboard. Both
+| fonts are self-hosted through the storefront bundle, which is already
+| built; declaring the families here lets Filament use them without a second
+| download or any call to a font CDN.
+|
+*/
+
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/instrument-sans';
+
+:root {
+    /* The warm canvas the storefront uses, tuned for a light working surface. */
+    --panchforon-canvas: #faf7f3;
+    --panchforon-surface: #ffffff;
+    --panchforon-line: #ece5dc;
+    --panchforon-ink: #241c14;
+}
+
+@theme {
+    --radius-lg: 0.875rem;
+    --radius-xl: 1.125rem;
+    --radius-2xl: 1.5rem;
+}
+
+@layer base {
+    /* Headings carry the display face, at an optical size meant for large text. */
+    .fi-header-heading,
+    .fi-section-header-heading,
+    .fi-modal-heading,
+    .fi-wi-stats-overview-stat-value,
+    .fi-ta-empty-state-heading,
+    .fi-empty-state-heading {
+        font-family: var(--serif-font-family), ui-serif, Georgia, serif;
+        font-optical-sizing: auto;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+    }
+
+    .fi-header-heading {
+        font-size: 1.875rem;
+        line-height: 1.15;
+    }
+
+    .fi-body {
+        background-color: var(--panchforon-canvas);
+    }
+
+    .dark .fi-body {
+        background-color: #16120e;
+    }
+}
+
+@layer components {
+    /* A warm spice ribbon across the top of the sidebar brand. */
+    .fi-sidebar-header {
+        border-bottom: 1px solid var(--color-gray-200);
+        position: relative;
+    }
+
+    .fi-sidebar-header::after {
+        background: linear-gradient(90deg, var(--color-primary-500), #f45f67 55%, #9b85ff);
+        bottom: -1px;
+        content: '';
+        height: 2px;
+        left: 0;
+        position: absolute;
+        right: 0;
+    }
+
+    .dark .fi-sidebar-header {
+        border-bottom-color: var(--color-gray-800);
+    }
+
+    /* The active navigation item gets the brand colour, not a grey wash. */
+    .fi-sidebar-item.fi-active .fi-sidebar-item-btn {
+        background-color: color-mix(in oklab, var(--color-primary-500) 12%, transparent);
+        box-shadow: inset 3px 0 0 0 var(--color-primary-500);
+    }
+
+    .fi-sidebar-item.fi-active .fi-sidebar-item-label {
+        font-weight: 600;
+    }
+
+    /* Panels sit on a softer edge than Filament's default hairline. */
+    .fi-section,
+    .fi-wi-stats-overview-stat,
+    .fi-ta-ctn {
+        border-radius: var(--radius-2xl);
+    }
+
+    .fi-wi-stats-overview-stat {
+        border-top: 3px solid color-mix(in oklab, var(--color-primary-500) 55%, transparent);
+    }
+
+    .fi-wi-stats-overview-stat-value {
+        font-size: 2rem;
+        line-height: 1.1;
+    }
+
+    /* Table rows respond on hover, which makes long moderation lists scannable. */
+    .fi-ta-row:hover {
+        background-color: color-mix(in oklab, var(--color-primary-500) 5%, transparent);
+    }
+
+    .fi-ta-header-cell {
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.6875rem;
+    }
+}

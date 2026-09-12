@@ -58,6 +58,7 @@ test('a token issued before suspension stops working', function () {
         ->getJson('/api/user')
         ->assertStatus(403)
         ->assertJsonPath('message', 'Your account has been suspended.')
+        ->assertJsonPath('code', 'account_suspended')
         ->assertJsonPath('reason', 'Spam');
 });
 

@@ -1,5 +1,5 @@
 import { request } from './client';
-import { AuthResponse, User } from '../types/api';
+import { AuthResponse, CurrentUser } from '../types/api';
 
 export const authApi = {
     register: (data: { name: string; email: string; password: string }): Promise<AuthResponse> =>
@@ -19,6 +19,24 @@ export const authApi = {
             method: 'POST',
         }),
 
-    me: (): Promise<{ data: User }> =>
-        request<{ data: User }>('/user'),
+    me: (): Promise<{ data: CurrentUser }> =>
+        request<{ data: CurrentUser }>('/user'),
+
+    exchangeSocialCode: (code: string): Promise<AuthResponse> =>
+        request<AuthResponse>('/auth/social/exchange', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
+
+    forgotPassword: (email: string): Promise<{ message: string }> =>
+        request<{ message: string }>('/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        }),
+
+    resetPassword: (data: { token: string; email: string; password: string; password_confirmation: string }): Promise<{ message: string }> =>
+        request<{ message: string }>('/reset-password', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
 };

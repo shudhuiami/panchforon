@@ -2,13 +2,24 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
-import { Navbar } from './components/layout/Navbar';
-import { Footer } from './components/layout/Footer';
+import { AppShell } from './components/layout/AppShell';
+import { BareShell } from './components/layout/BareShell';
+import { RequireAuth } from './features/auth/RequireAuth';
 import { HomePage } from './pages/HomePage';
+import { RecipesPage } from './pages/RecipesPage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { CreateRecipePage } from './pages/CreateRecipePage';
 import { EditRecipePage } from './pages/EditRecipePage';
 import { MealPlanPage } from './pages/MealPlanPage';
+import { WishlistPage } from './pages/WishlistPage';
+import { AccountPage } from './pages/AccountPage';
+import { MyRecipesPage } from './pages/MyRecipesPage';
+import { MyRatingsPage } from './pages/MyRatingsPage';
+import { CookPage } from './pages/CookPage';
+import { ContentPage } from './pages/ContentPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { SocialCallbackPage } from './pages/SocialCallbackPage';
 import { ShoppingListPage } from './pages/ShoppingListPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -17,37 +28,47 @@ import { NotFoundPage } from './pages/NotFoundPage';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 2, // 2 minutes
+            staleTime: 1000 * 60 * 2,
             retry: 1,
             refetchOnWindowFocus: false,
         },
     },
 });
 
-export const RootApp: React.FC = () => {
-    return (
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-                <BrowserRouter>
-                    <div className="flex flex-col min-h-screen bg-neutral-50 text-ink selection:bg-brand-primary/20 selection:text-ink">
-                        <Navbar />
-                        <main className="flex-1 w-full">
-                            <Routes>
-                                <Route path="/" element={<HomePage />} />
+export const RootApp: React.FC = () => (
+    <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+            <BrowserRouter>
+                <div className="bg-canvas text-ink">
+                    <Routes>
+                        <Route element={<AppShell />}>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/recipes" element={<RecipesPage />} />
+                            <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
+                            <Route path="/cooks/:id" element={<CookPage />} />
+                            <Route path="/p/:slug" element={<ContentPage />} />
+                            <Route element={<RequireAuth />}>
                                 <Route path="/recipes/create" element={<CreateRecipePage />} />
-                                <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
-                                <Route path="/recipes/:id/edit" element={<EditRecipePage />} />
+                                <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
+                                <Route path="/saved" element={<WishlistPage />} />
+                                <Route path="/account" element={<AccountPage />} />
+                                <Route path="/account/recipes" element={<MyRecipesPage />} />
+                                <Route path="/account/ratings" element={<MyRatingsPage />} />
                                 <Route path="/meal-plan" element={<MealPlanPage />} />
                                 <Route path="/shopping-list" element={<ShoppingListPage />} />
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/register" element={<RegisterPage />} />
-                                <Route path="*" element={<NotFoundPage />} />
-                            </Routes>
-                        </main>
-                        <Footer />
-                    </div>
-                </BrowserRouter>
-            </AuthProvider>
-        </QueryClientProvider>
-    );
-};
+                            </Route>
+                            <Route path="*" element={<NotFoundPage />} />
+                        </Route>
+                        <Route element={<BareShell />}>
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                            <Route path="/reset-password" element={<ResetPasswordPage />} />
+                            <Route path="/login/social" element={<SocialCallbackPage />} />
+                        </Route>
+                    </Routes>
+                </div>
+            </BrowserRouter>
+        </AuthProvider>
+    </QueryClientProvider>
+);

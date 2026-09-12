@@ -1,12 +1,37 @@
+export type ModerationStatus = 'pending' | 'approved' | 'unpublished';
+
+/** Another person, as shown on their recipes and reviews. */
 export interface User {
     id: number;
     name: string;
-    email: string;
     created_at?: string;
 }
 
+/** The signed-in account. */
+export interface CurrentUser extends User {
+    email: string;
+    is_admin: boolean;
+    email_verified_at?: string | null;
+    recipes_count?: number;
+    ratings_count?: number;
+}
+
+export interface SocialLogin {
+    key: string;
+    label: string;
+}
+
+export interface SiteSettings {
+    site_name: string;
+    contact_email: string;
+    registration_open: boolean;
+    submissions_open: boolean;
+    /** Providers this deployment has configured; empty when none are. */
+    social_logins: SocialLogin[];
+}
+
 export interface AuthResponse {
-    user: User;
+    user: CurrentUser;
     token: string;
 }
 
@@ -46,6 +71,7 @@ export interface Rating {
 export interface RecipeList {
     id: number;
     source: 'api' | 'user';
+    moderation_status: ModerationStatus;
     title: string;
     slug: string;
     cuisine?: string | null;
@@ -63,6 +89,7 @@ export interface RecipeDetail {
     user_id?: number | null;
     author?: User | null;
     source: 'api' | 'user';
+    moderation_status: ModerationStatus;
     external_id?: string | null;
     title: string;
     slug: string;
@@ -138,4 +165,48 @@ export interface PaginatedResponse<T> {
         to: number | null;
         total: number;
     };
+}
+
+export interface HomeStats {
+    recipes: number;
+    cuisines: number;
+    ratings: number;
+    cooks: number;
+}
+
+export interface HomeCuisine extends CuisineCount {
+    image_url?: string | null;
+}
+
+/** The home page in one payload. */
+export interface HomeFeed {
+    stats: HomeStats;
+    featured: RecipeList | null;
+    top_rated: RecipeList[];
+    latest: RecipeList[];
+    cuisines: HomeCuisine[];
+}
+
+/** A rating as its author sees it on their own account. */
+export interface MyRating {
+    id: number;
+    stars: number;
+    review?: string | null;
+    recipe?: RecipeList | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/** A cook as everyone else sees them. */
+export interface Cook {
+    id: number;
+    name: string;
+    recipes_count?: number;
+    ratings_count?: number;
+    created_at?: string;
+}
+
+export interface CookProfile {
+    cook: Cook;
+    recipes: PaginatedResponse<RecipeList>;
 }

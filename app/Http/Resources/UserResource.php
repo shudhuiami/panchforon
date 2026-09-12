@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * A user as other people see them: the author of a recipe, the writer of a
+ * review. No email address, no role. The account owner's own view is
+ * CurrentUserResource.
+ *
  * @mixin User
  */
 class UserResource extends JsonResource
@@ -19,7 +23,6 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }
