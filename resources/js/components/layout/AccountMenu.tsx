@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, PlusCircle, ShieldCheck, ShoppingBasket, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Heart, LogOut, PlusCircle, ShieldCheck, ShoppingBasket, UserRound, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
 import { Sheet } from '../ui/Sheet';
@@ -34,6 +34,8 @@ const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate, withCreat
 
     const items: MenuItem[] = [
         ...(withCreateLink ? [{ label: 'Post a recipe', icon: PlusCircle, to: '/recipes/create' } as MenuItem] : []),
+        { label: 'Your account', icon: UserRound, to: '/account' },
+        { label: 'Saved recipes', icon: Heart, to: '/saved' },
         { label: 'Shopping list', icon: ShoppingBasket, to: '/shopping-list' },
         ...(user.is_admin ? [{ label: 'Admin panel', icon: ShieldCheck, href: '/admin' } as MenuItem] : []),
         {

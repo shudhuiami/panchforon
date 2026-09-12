@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CookController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
 use App\Http\Controllers\Api\RecipeSaveController;
@@ -18,6 +21,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
+    Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 });
 
 Route::get('/recipes', [RecipeController::class, 'index']);
@@ -26,6 +31,7 @@ Route::get('/cuisines', [RecipeController::class, 'cuisines']);
 Route::get('/categories', [RecipeController::class, 'categories']);
 Route::get('/settings', SettingsController::class);
 Route::get('/home', HomeController::class);
+Route::get('/cooks/{id}', [CookController::class, 'show'])->whereNumber('id');
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +41,12 @@ Route::get('/home', HomeController::class);
 Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+
+    // Account
+    Route::put('/user', [AccountController::class, 'updateProfile']);
+    Route::put('/user/password', [AccountController::class, 'updatePassword']);
+    Route::get('/my/recipes', [AccountController::class, 'recipes']);
+    Route::get('/my/ratings', [AccountController::class, 'ratings']);
 
     // Recipe CRUD (User-authored)
     Route::post('/recipes', [RecipeController::class, 'store']);

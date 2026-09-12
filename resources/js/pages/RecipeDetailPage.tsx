@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, Check, Edit3, ExternalLink, Globe, ListChecks, MessageSquare, Plus, Quote, SearchX, Sparkles, Star, Trash2, Users, Utensils, type LucideIcon } from 'lucide-react';
 import { recipesApi } from '../api/recipes';
@@ -197,9 +197,13 @@ export const RecipeDetailPage: React.FC = () => {
                                 <span className="text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
                                     {recipe.source === 'user' && recipe.author ? 'Posted by' : 'From'}
                                 </span>
-                                <span className="text-sm font-semibold text-ink">
-                                    {recipe.source === 'user' && recipe.author ? recipe.author.name : 'TheMealDB collection'}
-                                </span>
+                                {recipe.source === 'user' && recipe.author ? (
+                                    <Link to={`/cooks/${recipe.author.id}`} className="text-sm font-semibold text-ink transition-colors hover:text-primary">
+                                        {recipe.author.name}
+                                    </Link>
+                                ) : (
+                                    <span className="text-sm font-semibold text-ink">TheMealDB collection</span>
+                                )}
                             </span>
                         </div>
                     </div>
@@ -408,7 +412,13 @@ export const RecipeDetailPage: React.FC = () => {
                                                 <div className="flex min-w-0 items-center gap-3">
                                                     <Avatar name={rating.user?.name ?? 'Anonymous cook'} size="md" />
                                                     <div className="min-w-0">
-                                                        <p className="truncate text-sm font-semibold text-ink">{rating.user?.name ?? 'Anonymous cook'}</p>
+                                                        {rating.user ? (
+                                                            <Link to={`/cooks/${rating.user.id}`} className="block truncate text-sm font-semibold text-ink transition-colors hover:text-primary">
+                                                                {rating.user.name}
+                                                            </Link>
+                                                        ) : (
+                                                            <p className="truncate text-sm font-semibold text-ink">Anonymous cook</p>
+                                                        )}
                                                         <p className="text-xs text-ink-3">{formatDate(rating.created_at) || 'Verified cook'}</p>
                                                     </div>
                                                 </div>

@@ -21,4 +21,16 @@ export const authApi = {
 
     me: (): Promise<{ data: CurrentUser }> =>
         request<{ data: CurrentUser }>('/user'),
+
+    forgotPassword: (email: string): Promise<{ message: string }> =>
+        request<{ message: string }>('/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        }),
+
+    resetPassword: (data: { token: string; email: string; password: string; password_confirmation: string }): Promise<{ message: string }> =>
+        request<{ message: string }>('/reset-password', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
 };

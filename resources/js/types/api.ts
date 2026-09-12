@@ -179,3 +179,27 @@ export interface HomeFeed {
     latest: RecipeList[];
     cuisines: HomeCuisine[];
 }
+
+/** A rating as its author sees it on their own account. */
+export interface MyRating {
+    id: number;
+    stars: number;
+    review?: string | null;
+    recipe?: RecipeList | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/** A cook as everyone else sees them. */
+export interface Cook {
+    id: number;
+    name: string;
+    recipes_count?: number;
+    ratings_count?: number;
+    created_at?: string;
+}
+
+export interface CookProfile {
+    cook: Cook;
+    recipes: PaginatedResponse<RecipeList>;
+}

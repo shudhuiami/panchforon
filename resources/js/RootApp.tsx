@@ -12,6 +12,12 @@ import { CreateRecipePage } from './pages/CreateRecipePage';
 import { EditRecipePage } from './pages/EditRecipePage';
 import { MealPlanPage } from './pages/MealPlanPage';
 import { WishlistPage } from './pages/WishlistPage';
+import { AccountPage } from './pages/AccountPage';
+import { MyRecipesPage } from './pages/MyRecipesPage';
+import { MyRatingsPage } from './pages/MyRatingsPage';
+import { CookPage } from './pages/CookPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ShoppingListPage } from './pages/ShoppingListPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -37,10 +43,14 @@ export const RootApp: React.FC = () => (
                             <Route path="/" element={<HomePage />} />
                             <Route path="/recipes" element={<RecipesPage />} />
                             <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
+                            <Route path="/cooks/:id" element={<CookPage />} />
                             <Route element={<RequireAuth />}>
                                 <Route path="/recipes/create" element={<CreateRecipePage />} />
                                 <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
                                 <Route path="/saved" element={<WishlistPage />} />
+                                <Route path="/account" element={<AccountPage />} />
+                                <Route path="/account/recipes" element={<MyRecipesPage />} />
+                                <Route path="/account/ratings" element={<MyRatingsPage />} />
                                 <Route path="/meal-plan" element={<MealPlanPage />} />
                                 <Route path="/shopping-list" element={<ShoppingListPage />} />
                             </Route>
@@ -49,6 +59,8 @@ export const RootApp: React.FC = () => (
                         <Route element={<BareShell />}>
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                            <Route path="/reset-password" element={<ResetPasswordPage />} />
                         </Route>
                     </Routes>
                 </div>

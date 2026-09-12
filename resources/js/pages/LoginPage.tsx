@@ -13,7 +13,9 @@ export const LoginPage: React.FC = () => {
     const settings = useSiteSettings();
     const navigate = useNavigate();
     const location = useLocation();
-    const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/meal-plan';
+    const state = location.state as { from?: { pathname?: string }; resetDone?: boolean } | null;
+    const from = state?.from?.pathname || '/meal-plan';
+    const [showResetDone, setShowResetDone] = useState(Boolean(state?.resetDone));
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -51,6 +53,11 @@ export const LoginPage: React.FC = () => {
     return (
         <AuthLayout eyebrow="Welcome back" title="Sign in to your kitchen." blurb="Your meal plan, shopping list and ratings are exactly where you left them.">
             <div className="space-y-4">
+                {showResetDone && (
+                    <Alert variant="success" onClose={() => setShowResetDone(false)}>
+                        Your password has been reset. Sign in with the new one.
+                    </Alert>
+                )}
                 {notice && (
                     <Alert variant="warning" onClose={clearNotice}>
                         {notice.message}
@@ -88,6 +95,11 @@ export const LoginPage: React.FC = () => {
                     placeholder="••••••••"
                     leftIcon={<Lock className="size-4" />}
                 />
+                <div className="flex justify-end">
+                    <Link to="/forgot-password" className="text-sm text-ink-3 transition-colors hover:text-primary">
+                        Forgot your password?
+                    </Link>
+                </div>
                 <Button type="submit" size="lg" isLoading={isLoading} className="w-full">
                     Sign in
                 </Button>

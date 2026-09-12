@@ -21,6 +21,10 @@ interface AuthContextType {
     register: (name: string, email: string, password: string) => Promise<void>;
     demoLogin: () => Promise<void>;
     logout: () => Promise<void>;
+    /** Replace the cached account after the cook edits it. */
+    setUser: (user: CurrentUser) => void;
+    /** Adopt a token the API reissued, e.g. after a password change. */
+    adoptToken: (token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,6 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await login('demo@panchforon.com', 'password');
     };
 
+    const adoptToken = useCallback((next: string) => {
+        persistToken(next);
+        setToken(next);
+    }, []);
+
     const logout = async () => {
         try {
             await authApi.logout();
@@ -122,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return (
         <AuthContext.Provider
-            value={{ user, token, isLoading, notice, clearNotice: () => setNotice(null), login, register, demoLogin, logout }}
+            value={{ user, token, isLoading, notice, clearNotice: () => setNotice(null), login, register, demoLogin, logout, setUser, adoptToken }}
         >
             {children}
         </AuthContext.Provider>
