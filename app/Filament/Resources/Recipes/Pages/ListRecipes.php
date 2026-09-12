@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Recipes\Pages;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Filament\Actions\CatalogueActions;
 use App\Filament\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
 use Filament\Resources\Pages\ListRecords;
@@ -14,9 +15,17 @@ class ListRecipes extends ListRecords
 {
     protected static string $resource = RecipeResource::class;
 
+    /**
+     * Catalogue-wide jobs live here rather than on their own navigation
+     * items: this is the screen the catalogue is on.
+     */
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            CatalogueActions::importFromMealDb(),
+            CatalogueActions::renameTaxonomy('cuisine'),
+            CatalogueActions::renameTaxonomy('category'),
+        ];
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Actions\CatalogueActions;
 use App\Models\User;
 use App\Services\SettingsRepository;
 use BackedEnum;
@@ -128,7 +129,14 @@ class SiteSettings extends Page
                                         TagsInput::make('mealdb_import_areas')
                                             ->label('Cuisines to import')
                                             ->placeholder('Add a cuisine')
-                                            ->helperText('TheMealDB area names, for example Indian or Italian.')
+                                            /**
+                                             * Suggesting the real area names matters: TheMealDB
+                                             * returns nothing at all for a name it does not
+                                             * publish, and the import would look broken rather
+                                             * than misconfigured.
+                                             */
+                                            ->suggestions(CatalogueActions::mealDbAreas())
+                                            ->helperText('TheMealDB area names. Start typing for the ones it publishes.')
                                             ->columnSpanFull(),
                                     ]),
 
