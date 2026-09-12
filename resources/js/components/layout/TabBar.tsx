@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarDays, Compass, Home, UserRound } from 'lucide-react';
+import { CalendarDays, Compass, Heart, Home, UserRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useMealPlanCount } from '../../features/meal-plan/useMealPlan';
 import { CountBadge } from '../ui/Badge';
@@ -24,7 +24,7 @@ export const TabBar: React.FC = () => {
     return (
         <>
             <nav aria-label="Tabs" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 lg:hidden">
-                <ul className="grid h-16 grid-cols-4">
+                <ul className="grid h-16 grid-cols-5">
                     <li>
                         <NavLink to="/" end className={({ isActive }) => tabClass(isActive)}>
                             <Home className="size-6" aria-hidden="true" />
@@ -44,6 +44,12 @@ export const TabBar: React.FC = () => {
                                 <CountBadge count={planCount} className="absolute -right-2.5 -top-1.5" />
                             </span>
                             Plan
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/saved" className={({ isActive }) => tabClass(isActive)}>
+                            <Heart className="size-6" aria-hidden="true" />
+                            Saved
                         </NavLink>
                     </li>
                     <li>

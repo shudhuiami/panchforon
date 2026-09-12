@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
+use App\Http\Controllers\Api\RecipeSaveController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,12 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(func
     // Ratings
     Route::put('/recipes/{id}/rating', [RatingController::class, 'upsert'])->whereNumber('id');
     Route::delete('/recipes/{id}/rating', [RatingController::class, 'destroy'])->whereNumber('id');
+
+    // Saved recipes (the wishlist)
+    Route::get('/saved-recipes', [RecipeSaveController::class, 'index']);
+    Route::get('/saved-recipes/ids', [RecipeSaveController::class, 'ids']);
+    Route::post('/recipes/{id}/save', [RecipeSaveController::class, 'store'])->whereNumber('id');
+    Route::delete('/recipes/{id}/save', [RecipeSaveController::class, 'destroy'])->whereNumber('id');
 
     // Meal Plan
     Route::get('/meal-plan', [MealPlanController::class, 'show']);

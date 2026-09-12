@@ -7,6 +7,7 @@ import { mealPlanApi } from '../../api/mealPlan';
 import { useAuth } from '../../context/AuthContext';
 import { StarRating } from '../../components/ui/StarRating';
 import { Photo } from '../../components/ui/Photo';
+import { SaveButton } from '../saves/SaveButton';
 
 export const FALLBACK_GRADIENTS = ['bg-spice-gradient', 'bg-plum-gradient', 'bg-mint-gradient', 'bg-sunrise-gradient', 'bg-ink-gradient'];
 
@@ -78,6 +79,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
                         {recipe.bayesian_score.toFixed(1)}
                     </span>
                 )}
+
+                <span className="absolute top-13 right-3 sm:top-14 sm:right-4">
+                    <SaveButton recipeId={recipe.id} recipeTitle={recipe.title} />
+                </span>
 
                 <div className="absolute inset-x-0 bottom-0 p-4 pr-14 sm:p-5 sm:pr-16">
                     {recipe.category && (

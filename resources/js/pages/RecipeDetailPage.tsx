@@ -15,6 +15,7 @@ import { StatusPanel } from '../components/common/StatusPanel';
 import { Reveal } from '../components/motion/Reveal';
 import { RecipeFallback } from '../features/recipes/RecipeCard';
 import { RatingReviewModal } from '../features/ratings/RatingReviewModal';
+import { SaveButton } from '../features/saves/SaveButton';
 
 const formatQuantity = (quantity: number | null | undefined): string => {
     if (quantity === null || quantity === undefined) return '';
@@ -262,6 +263,9 @@ export const RecipeDetailPage: React.FC = () => {
                                 {justAddedToPlan ? 'Added to your plan' : 'Add to meal plan'}
                             </Button>
                             {addToPlanMutation.isError && <p className="mt-2 text-xs text-hot">Couldn’t add this dish right now. Please try again.</p>}
+                            <div className="mt-3">
+                                <SaveButton recipeId={recipe.id} recipeTitle={recipe.title} variant="inline" className="w-full justify-center" />
+                            </div>
                         </div>
                     </div>
                 </div>

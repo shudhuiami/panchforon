@@ -38,6 +38,7 @@ export const Footer: React.FC = () => {
                     <ul className="mt-4 space-y-2.5">
                         <li><Link to="/recipes" className={linkClass}>Browse recipes</Link></li>
                         <li><Link to="/meal-plan" className={linkClass}>Weekly meal plan</Link></li>
+                        <li><Link to="/saved" className={linkClass}>Saved recipes</Link></li>
                         <li><Link to="/shopping-list" className={linkClass}>Shopping list</Link></li>
                     </ul>
                 </nav>

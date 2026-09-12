@@ -34,7 +34,7 @@ export const Header: React.FC = () => {
     const links = [
         { to: '/', label: 'Home', end: true },
         { to: '/recipes', label: 'Recipes' },
-        ...(user ? [{ to: '/meal-plan', label: 'Meal plan', badge: planCount }] : []),
+        ...(user ? [{ to: '/meal-plan', label: 'Meal plan', badge: planCount }, { to: '/saved', label: 'Saved' }] : []),
     ];
 
     return (

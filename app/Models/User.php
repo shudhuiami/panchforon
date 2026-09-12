@@ -7,6 +7,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -111,6 +112,26 @@ class User extends Authenticatable implements FilamentUser
     public function ratings(): HasMany
     {
         return $this->hasMany(Rating::class);
+    }
+
+    /**
+     * The recipes this cook has kept for later, newest save first.
+     *
+     * @return BelongsToMany<Recipe, $this>
+     */
+    public function savedRecipes(): BelongsToMany
+    {
+        return $this->belongsToMany(Recipe::class, 'recipe_saves')
+            ->withTimestamps()
+            ->orderByDesc('recipe_saves.created_at');
+    }
+
+    /**
+     * @return HasMany<RecipeSave, $this>
+     */
+    public function recipeSaves(): HasMany
+    {
+        return $this->hasMany(RecipeSave::class);
     }
 
     /**
