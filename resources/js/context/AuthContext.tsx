@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { AuthResponse, User } from '../types/api';
+import { AuthResponse, CurrentUser } from '../types/api';
 import { authApi } from '../api/auth';
 import { authEvents, getToken, setToken as persistToken, type AuthEventDetail } from '../api/client';
 
@@ -10,7 +10,7 @@ export interface AuthNotice {
 }
 
 interface AuthContextType {
-    user: User | null;
+    user: CurrentUser | null;
     token: string | null;
     /** True until a stored token has been verified against the API. */
     isLoading: boolean;
@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
     const [token, setToken] = useState<string | null>(() => getToken());
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<CurrentUser | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(() => getToken() !== null);
     const [notice, setNotice] = useState<AuthNotice | null>(null);
 

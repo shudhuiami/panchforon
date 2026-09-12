@@ -27,6 +27,7 @@ class RecipeDetailResource extends JsonResource
             'user_id' => $this->user_id,
             'author' => new UserResource($this->whenLoaded('user')),
             'source' => $this->source->value,
+            'moderation_status' => $this->moderation_status->value,
             'external_id' => $this->external_id,
             'title' => $this->title,
             'slug' => $this->slug,

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MealPlanController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Middleware\EnsureUserIsNotSuspended;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,7 @@ Route::get('/recipes', [RecipeController::class, 'index']);
 Route::get('/recipes/{slug}', [RecipeController::class, 'show'])->where('slug', '[a-z0-9\-]+');
 Route::get('/cuisines', [RecipeController::class, 'cuisines']);
 Route::get('/categories', [RecipeController::class, 'categories']);
+Route::get('/settings', SettingsController::class);
 
 /*
 |--------------------------------------------------------------------------

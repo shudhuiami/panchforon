@@ -1,12 +1,30 @@
+export type ModerationStatus = 'pending' | 'approved' | 'unpublished';
+
+/** Another person, as shown on their recipes and reviews. */
 export interface User {
     id: number;
     name: string;
-    email: string;
     created_at?: string;
 }
 
+/** The signed-in account. */
+export interface CurrentUser extends User {
+    email: string;
+    is_admin: boolean;
+    email_verified_at?: string | null;
+    recipes_count?: number;
+    ratings_count?: number;
+}
+
+export interface SiteSettings {
+    site_name: string;
+    contact_email: string;
+    registration_open: boolean;
+    submissions_open: boolean;
+}
+
 export interface AuthResponse {
-    user: User;
+    user: CurrentUser;
     token: string;
 }
 
@@ -46,6 +64,7 @@ export interface Rating {
 export interface RecipeList {
     id: number;
     source: 'api' | 'user';
+    moderation_status: ModerationStatus;
     title: string;
     slug: string;
     cuisine?: string | null;
@@ -63,6 +82,7 @@ export interface RecipeDetail {
     user_id?: number | null;
     author?: User | null;
     source: 'api' | 'user';
+    moderation_status: ModerationStatus;
     external_id?: string | null;
     title: string;
     slug: string;

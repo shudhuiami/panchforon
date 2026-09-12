@@ -1,5 +1,5 @@
 import { request } from './client';
-import { AuthResponse, User } from '../types/api';
+import { AuthResponse, CurrentUser } from '../types/api';
 
 export const authApi = {
     register: (data: { name: string; email: string; password: string }): Promise<AuthResponse> =>
@@ -19,6 +19,6 @@ export const authApi = {
             method: 'POST',
         }),
 
-    me: (): Promise<{ data: User }> =>
-        request<{ data: User }>('/user'),
+    me: (): Promise<{ data: CurrentUser }> =>
+        request<{ data: CurrentUser }>('/user'),
 };
