@@ -20,9 +20,6 @@
 @import '@fontsource-variable/instrument-sans';
 
 :root {
-    --font-family: 'Instrument Sans Variable';
-    --serif-font-family: 'Fraunces Variable';
-
     /* The warm canvas the storefront uses, tuned for a light working surface. */
     --panchforon-canvas: #faf7f3;
     --panchforon-surface: #ffffff;
@@ -86,12 +83,12 @@
     }
 
     /* The active navigation item gets the brand colour, not a grey wash. */
-    .fi-sidebar-item-active .fi-sidebar-item-button {
+    .fi-sidebar-item.fi-active .fi-sidebar-item-btn {
         background-color: color-mix(in oklab, var(--color-primary-500) 12%, transparent);
         box-shadow: inset 3px 0 0 0 var(--color-primary-500);
     }
 
-    .fi-sidebar-item-active .fi-sidebar-item-label {
+    .fi-sidebar-item.fi-active .fi-sidebar-item-label {
         font-weight: 600;
     }
 

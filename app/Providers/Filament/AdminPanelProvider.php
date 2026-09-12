@@ -45,7 +45,14 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::hex('#5CA135'),
                 'warning' => Color::hex('#FB8818'),
             ])
+            /**
+             * Both faces ship in the storefront bundle the theme imports, so
+             * these are declared through Filament's own API: it writes the
+             * font variables inline, which would otherwise win over anything
+             * the stylesheet sets.
+             */
             ->font('Instrument Sans Variable', provider: LocalFontProvider::class)
+            ->serifFont('Fraunces Variable', provider: LocalFontProvider::class)
             ->maxContentWidth(Width::ScreenTwoExtraLarge)
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
