@@ -39,7 +39,7 @@ class SiteSettings extends Page
 
     protected static ?string $title = 'Site settings';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $slug = 'site-settings';
 

@@ -60,7 +60,11 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            /**
+             * Widgets are registered explicitly rather than discovered: the
+             * report widgets belong to the Reports page, and discovery would
+             * also drop them onto the dashboard.
+             */
             ->widgets([
                 PlatformOverview::class,
             ])

@@ -17,7 +17,7 @@ class ContentFlagResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFlag;
 
-    protected static ?string $navigationLabel = 'Reports';
+    protected static ?string $navigationLabel = 'Reported recipes';
 
     protected static ?string $modelLabel = 'report';
 
