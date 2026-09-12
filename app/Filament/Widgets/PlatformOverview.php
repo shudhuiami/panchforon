@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\ContentFlags\ContentFlagResource;
 use App\Filament\Resources\Recipes\RecipeResource;
 use App\Filament\Resources\Users\UserResource;
+use App\Models\ContentFlag;
 use App\Models\Rating;
 use App\Models\Recipe;
 use App\Models\User;
@@ -25,6 +27,7 @@ class PlatformOverview extends StatsOverviewWidget
         $awaitingReview = Recipe::query()->awaitingModeration()->count();
         $ratingsThisWeek = Rating::query()->where('created_at', '>=', now()->subWeek())->count();
         $suspended = User::query()->suspended()->count();
+        $openReports = ContentFlag::query()->open()->count();
 
         return [
             Stat::make('Total users', number_format(User::query()->count()))
@@ -51,8 +54,16 @@ class PlatformOverview extends StatsOverviewWidget
                 ->color($awaitingReview > 0 ? 'warning' : 'gray')
                 ->url(RecipeResource::getUrl('index', ['activeTab' => 'queue'])),
 
+            Stat::make('Open reports', number_format($openReports))
+                ->description($openReports > 0 ? 'Reported by the community' : 'Nothing reported')
+                ->descriptionIcon($openReports > 0 ? Heroicon::OutlinedFlag : Heroicon::OutlinedCheckCircle)
+                ->descriptionColor($openReports > 0 ? 'danger' : 'success')
+                ->icon(Heroicon::OutlinedFlag)
+                ->color($openReports > 0 ? 'danger' : 'gray')
+                ->url(ContentFlagResource::getUrl('index')),
+
             /**
-             * Deliberately neutral. Only the moderation queue turns amber, so a
+             * Deliberately neutral. Only the queues turn amber or red, so a
              * colour on this row always means something needs attention.
              */
             Stat::make('Ratings this week', number_format($ratingsThisWeek))

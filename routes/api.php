@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ContentFlagController;
 use App\Http\Controllers\Api\CookController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
@@ -37,6 +38,7 @@ Route::get('/home', HomeController::class);
 Route::get('/cooks/{id}', [CookController::class, 'show'])->whereNumber('id');
 Route::get('/pages', [PageController::class, 'index']);
 Route::get('/content-blocks', [PageController::class, 'blocks']);
+Route::get('/flag-reasons', [ContentFlagController::class, 'reasons']);
 Route::get('/pages/{slug}', [PageController::class, 'show'])->where('slug', '[a-z0-9\-]+');
 
 /*
@@ -58,6 +60,9 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(func
     Route::post('/recipes', [RecipeController::class, 'store']);
     Route::put('/recipes/{id}', [RecipeController::class, 'update'])->whereNumber('id');
     Route::delete('/recipes/{id}', [RecipeController::class, 'destroy'])->whereNumber('id');
+
+    // Reporting a recipe
+    Route::post('/recipes/{id}/flag', [ContentFlagController::class, 'store'])->whereNumber('id');
 
     // Ratings
     Route::put('/recipes/{id}/rating', [RatingController::class, 'upsert'])->whereNumber('id');
