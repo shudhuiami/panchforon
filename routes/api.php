@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RecipeController;
@@ -23,6 +24,7 @@ Route::get('/recipes/{slug}', [RecipeController::class, 'show'])->where('slug', 
 Route::get('/cuisines', [RecipeController::class, 'cuisines']);
 Route::get('/categories', [RecipeController::class, 'categories']);
 Route::get('/settings', SettingsController::class);
+Route::get('/home', HomeController::class);
 
 /*
 |--------------------------------------------------------------------------

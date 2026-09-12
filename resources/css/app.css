@@ -222,20 +222,23 @@
             radial-gradient(36rem 30rem at 70% 90%, rgba(42, 211, 177, 0.14), transparent 60%),
             radial-gradient(28rem 22rem at 20% 90%, rgba(244, 95, 103, 0.12), transparent 60%);
     }
-    .bg-spice-gradient { background: linear-gradient(120deg, var(--primary), var(--hot) 55%, var(--plum)); }
-    .bg-sunrise-gradient { background: linear-gradient(120deg, var(--turmeric), var(--primary) 60%, var(--hot)); }
-    .bg-mint-gradient { background: linear-gradient(120deg, var(--mint-deep), var(--mint)); }
-    .bg-plum-gradient { background: linear-gradient(120deg, var(--plum-deep), var(--plum)); }
-    .bg-ink-gradient { background: linear-gradient(140deg, var(--surface-3), var(--surface) 60%, #1A1220); }
+    /* Gradients and dot patterns compose: both declare the same two-layer image, pattern over gradient. */
+    .bg-spice-gradient { --bg-gradient: linear-gradient(120deg, var(--primary), var(--hot) 55%, var(--plum)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
+    .bg-sunrise-gradient { --bg-gradient: linear-gradient(120deg, var(--turmeric), var(--primary) 60%, var(--hot)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
+    .bg-mint-gradient { --bg-gradient: linear-gradient(120deg, var(--mint-deep), var(--mint)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
+    .bg-plum-gradient { --bg-gradient: linear-gradient(120deg, var(--plum-deep), var(--plum)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
+    .bg-ink-gradient { --bg-gradient: linear-gradient(140deg, var(--surface-3), var(--surface) 60%, #1A1220); background-image: var(--bg-pattern, none), var(--bg-gradient); }
 
     /* Patterns */
     .bg-dots {
-        background-image: radial-gradient(rgba(255, 240, 224, 0.14) 1.2px, transparent 1.2px);
-        background-size: 18px 18px;
+        --bg-pattern: radial-gradient(rgba(255, 240, 224, 0.14) 1.2px, transparent 1.2px);
+        background-image: var(--bg-pattern), var(--bg-gradient, none);
+        background-size: 18px 18px, auto;
     }
     .bg-dots-light {
-        background-image: radial-gradient(rgba(255, 255, 255, 0.28) 1.2px, transparent 1.2px);
-        background-size: 18px 18px;
+        --bg-pattern: radial-gradient(rgba(255, 255, 255, 0.28) 1.2px, transparent 1.2px);
+        background-image: var(--bg-pattern), var(--bg-gradient, none);
+        background-size: 18px 18px, auto;
     }
     .bg-stripes {
         background-image: repeating-linear-gradient(-45deg, rgba(255, 240, 224, 0.06) 0 10px, transparent 10px 20px);
@@ -308,6 +311,39 @@
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-500 { animation-delay: 500ms; }
 
+
+/* ---------- Editorial motion (home page) ---------- */
+@keyframes auroraA { 0%, 100% { transform: translate3d(-8%, -6%, 0) scale(1); } 50% { transform: translate3d(10%, 8%, 0) scale(1.18); } }
+@keyframes auroraB { 0%, 100% { transform: translate3d(8%, 10%, 0) scale(1.1); } 50% { transform: translate3d(-10%, -10%, 0) scale(0.9); } }
+@keyframes auroraC { 0%, 100% { transform: translate3d(0, 10%, 0) scale(1); } 50% { transform: translate3d(-12%, -4%, 0) scale(1.25); } }
+@keyframes kenBurns { from { transform: scale(1.04) translate3d(0, 0, 0); } to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); } }
+@keyframes scrollCue { 0% { transform: scaleY(0); transform-origin: top; } 45% { transform: scaleY(1); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+@keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.8); opacity: 0; } }
+@keyframes wordUp { to { opacity: 1; transform: translateY(0); } }
+
+.aurora { position: absolute; border-radius: 9999px; filter: blur(72px); will-change: transform; pointer-events: none; }
+.animate-aurora-a { animation: auroraA 24s ease-in-out infinite; }
+.animate-aurora-b { animation: auroraB 30s ease-in-out infinite; }
+.animate-aurora-c { animation: auroraC 27s ease-in-out infinite; }
+.animate-ken-burns { animation: kenBurns 30s ease-out both; }
+.animate-scroll-cue { animation: scrollCue 2.2s var(--ease-out-expo) infinite; }
+.animate-pulse-dot { animation: pulseDot 2s ease-out infinite; }
+
+/* Scroll-triggered entrance: Reveal adds .is-visible once the element is on screen */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease-out-expo), transform .8s var(--ease-out-expo); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* Headline words rise out of a clipped line, one after another */
+.headline-word { display: inline-block; opacity: 0; transform: translateY(110%); animation: wordUp .9s var(--ease-out-expo) forwards; }
+
+/* Full-bleed horizontal rail whose first item lines up with the page container */
+.rail { --rail-pad: 1rem; display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; padding-inline: var(--rail-pad); scroll-padding-inline: var(--rail-pad); -ms-overflow-style: none; scrollbar-width: none; }
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { flex-shrink: 0; scroll-snap-align: start; }
+@media (min-width: 640px) { .rail { --rail-pad: 1.5rem; } }
+@media (min-width: 1024px) { .rail { --rail-pad: max(2rem, calc((100% - 80rem) / 2 + 2rem)); } }
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    .reveal, .headline-word { opacity: 1 !important; transform: none !important; }
 }

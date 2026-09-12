@@ -159,3 +159,23 @@ export interface PaginatedResponse<T> {
         total: number;
     };
 }
+
+export interface HomeStats {
+    recipes: number;
+    cuisines: number;
+    ratings: number;
+    cooks: number;
+}
+
+export interface HomeCuisine extends CuisineCount {
+    image_url?: string | null;
+}
+
+/** The home page in one payload. */
+export interface HomeFeed {
+    stats: HomeStats;
+    featured: RecipeList | null;
+    top_rated: RecipeList[];
+    latest: RecipeList[];
+    cuisines: HomeCuisine[];
+}

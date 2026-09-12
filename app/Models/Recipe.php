@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Services\HomeFeed;
 use Database\Factories\RecipeFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,6 +53,15 @@ class Recipe extends Model
             'moderated_at' => 'datetime',
             'servings' => 'integer',
         ];
+    }
+
+    /**
+     * The home feed is cached; any change here must show up on the next request.
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn () => HomeFeed::forget());
+        static::deleted(fn () => HomeFeed::forget());
     }
 
     /**
