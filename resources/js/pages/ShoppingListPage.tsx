@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ArrowLeft, Info, PartyPopper, Printer, RefreshCw, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CalendarRange, Info, PartyPopper, Printer, RefreshCw, ShoppingBag } from 'lucide-react';
 import { mealPlanApi } from '../api/mealPlan';
 import { ShoppingListItem } from '../types/api';
+import { useMealPlan } from '../features/meal-plan/useMealPlan';
+import { formatRange } from '../features/meal-plan/dates';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -23,6 +25,10 @@ export const ShoppingListPage: React.FC = () => {
 
     const { data, isLoading, error } = useQuery({ queryKey: ['shoppingList'], queryFn: () => mealPlanApi.getShoppingList() });
     const items = data?.data ?? [];
+
+    /** The list belongs to a dated plan now, so it says which one. */
+    const { data: planData } = useMealPlan();
+    const plan = planData?.data;
 
     const regenerateMutation = useMutation({
         mutationFn: () => mealPlanApi.generateShoppingList(),
@@ -73,6 +79,12 @@ export const ShoppingListPage: React.FC = () => {
                     <p className="mt-4 text-base text-ink-2 sm:text-lg" aria-live="polite">
                         {allDone ? 'Everything is ticked off. Time to cook.' : `${remaining} ${remaining === 1 ? 'item' : 'items'} left to grab. Tap a row to check it off.`}
                     </p>
+                    {plan && (
+                        <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink-2">
+                            <CalendarRange className="size-4 text-primary" aria-hidden="true" />
+                            {plan.name} · {formatRange(plan.starts_on, plan.ends_on)}
+                        </p>
+                    )}
                     <div className="mt-5 flex flex-wrap gap-3">
                         <Button variant="secondary" onClick={() => regenerateMutation.mutate()} isLoading={regenerateMutation.isPending}>
                             <RefreshCw className="size-4" aria-hidden="true" />

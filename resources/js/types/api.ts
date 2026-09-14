@@ -1,4 +1,7 @@
-export type ModerationStatus = 'pending' | 'approved' | 'unpublished';
+export type ModerationStatus = 'draft' | 'pending' | 'approved' | 'unpublished';
+
+/** Which meal of the day a planned dish belongs to. */
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 /** Another person, as shown on their recipes and reviews. */
 export interface User {
@@ -112,6 +115,9 @@ export interface MealPlanItem {
     meal_plan_id: number;
     recipe_id: number;
     servings: number;
+    /** The day this dish is cooked on, or null while it sits unscheduled. */
+    planned_for: string | null;
+    meal_slot: MealSlot;
     recipe?: RecipeList | null;
     created_at?: string;
 }
@@ -120,7 +126,30 @@ export interface MealPlan {
     id: number;
     name: string;
     is_active: boolean;
+    /** ISO dates (YYYY-MM-DD). A plan always covers at least one day. */
+    starts_on: string;
+    ends_on: string;
+    day_count: number;
     items: MealPlanItem[];
+    items_count: number;
+    shopping_items_count: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/** A plan as it appears in the history list, without its items. */
+export interface MealPlanSummary {
+    id: number;
+    name: string;
+    is_active: boolean;
+    starts_on: string;
+    ends_on: string;
+    day_count: number;
+    items_count: number;
+    servings_total: number;
+    cuisines: string[];
+    shopping_items_count: number;
+    shopping_checked_count: number;
     created_at?: string;
     updated_at?: string;
 }

@@ -75,6 +75,15 @@ class Recipe extends Model
     }
 
     /**
+     * A recipe its author has not submitted yet. Nobody else can see it and it
+     * never reaches the moderation queue.
+     */
+    public function isDraft(): bool
+    {
+        return $this->moderation_status === ModerationStatus::Draft;
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function moderator(): BelongsTo
@@ -85,6 +94,9 @@ class Recipe extends Model
     /**
      * Restrict a query to recipes the public API is allowed to return.
      *
+     * Drafts are excluded because ModerationStatus::publiclyVisible() lists
+     * approved only.
+     *
      * @param  Builder<Recipe>  $query
      */
     public function scopePubliclyVisible(Builder $query): void
@@ -93,11 +105,24 @@ class Recipe extends Model
     }
 
     /**
+     * The review queue: submissions waiting on a moderator. A draft has not
+     * been submitted, so it is not in here.
+     *
      * @param  Builder<Recipe>  $query
      */
     public function scopeAwaitingModeration(Builder $query): void
     {
         $query->where('recipes.moderation_status', ModerationStatus::Pending);
+    }
+
+    /**
+     * The drafts on a query that is already scoped to one author.
+     *
+     * @param  Builder<Recipe>  $query
+     */
+    public function scopeDrafts(Builder $query): void
+    {
+        $query->where('recipes.moderation_status', ModerationStatus::Draft);
     }
 
     /**

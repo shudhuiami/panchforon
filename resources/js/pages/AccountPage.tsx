@@ -71,7 +71,8 @@ export const AccountPage: React.FC = () => {
 
     return (
         <AccountLayout title="Your kitchen, your details." blurb="Change how you appear to the community and keep your sign-in secure.">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+            {/* The rail takes 16rem of the row, so the two columns only fit from xl. */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:items-start">
                 <div className="space-y-6">
                     <section className="flex items-center gap-4 rounded-3xl border border-line bg-surface p-6">
                         <Avatar name={user.name} size="lg" />

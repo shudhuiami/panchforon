@@ -30,7 +30,7 @@ class RecipeModerationActions
             ->requiresConfirmation()
             ->modalHeading(fn (Recipe $record): string => "Publish \"{$record->title}\"?")
             ->modalDescription('It will appear in the public recipe list and search straight away.')
-            ->visible(fn (Recipe $record): bool => $record->isUserSubmitted()
+            ->visible(fn (Recipe $record): bool => self::isModeratable($record)
                 && $record->moderation_status !== ModerationStatus::Approved)
             ->action(function (Recipe $record): void {
                 self::applyStatus($record, ModerationStatus::Approved);
@@ -94,6 +94,17 @@ class RecipeModerationActions
             ->action(fn (Collection $records) => self::applyBulkStatus($records, ModerationStatus::Unpublished));
     }
 
+    /**
+     * A recipe a moderator may act on: user submitted, and actually submitted.
+     * A draft is its author's private work — it is not in the queue, and a
+     * moderator publishing one would put writing on the site that its author
+     * never sent.
+     */
+    private static function isModeratable(Recipe $recipe): bool
+    {
+        return $recipe->isUserSubmitted() && ! $recipe->isDraft();
+    }
+
     private static function applyStatus(Recipe $recipe, ModerationStatus $status): void
     {
         $recipe->forceFill([
@@ -108,7 +119,7 @@ class RecipeModerationActions
      */
     private static function applyBulkStatus(Collection $records, ModerationStatus $status): void
     {
-        $eligible = $records->filter(fn (Recipe $recipe): bool => $recipe->isUserSubmitted());
+        $eligible = $records->filter(fn (Recipe $recipe): bool => self::isModeratable($recipe));
 
         foreach ($eligible as $recipe) {
             self::applyStatus($recipe, $status);
@@ -121,7 +132,18 @@ class RecipeModerationActions
             ->title($eligible->count().' '.str('recipe')->plural($eligible->count()).' updated');
 
         if ($skipped > 0) {
-            $notification->body("{$skipped} imported ".str('recipe')->plural($skipped).' skipped, since TheMealDB imports are not moderated.');
+            $drafts = $records->filter(fn (Recipe $recipe): bool => $recipe->isDraft())->count();
+            $imports = $skipped - $drafts;
+
+            $reasons = [];
+            if ($imports > 0) {
+                $reasons[] = "{$imports} imported ".str('recipe')->plural($imports).' (TheMealDB imports are not moderated)';
+            }
+            if ($drafts > 0) {
+                $reasons[] = "{$drafts} ".str('draft')->plural($drafts).' (their authors have not submitted them)';
+            }
+
+            $notification->body('Skipped '.implode(' and ', $reasons).'.');
         }
 
         $notification->send();

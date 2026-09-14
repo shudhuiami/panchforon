@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChefHat, Pencil } from 'lucide-react';
@@ -13,10 +13,28 @@ import { Pagination } from '../components/ui/Pagination';
 import { EmptyState } from '../components/common/EmptyState';
 import { useRecipeFilters } from '../features/recipes/useRecipeFilters';
 
-const MODERATION: Record<ModerationStatus, { label: string; variant: 'success' | 'category' | 'danger'; note: string }> = {
+const MODERATION: Record<ModerationStatus, { label: string; variant: 'success' | 'category' | 'danger' | 'outline'; note: string }> = {
+    draft: { label: 'Draft', variant: 'outline', note: 'Only you can see this. Publish it when it’s ready.' },
     approved: { label: 'Published', variant: 'success', note: 'Anyone can find and cook this.' },
     pending: { label: 'In review', variant: 'category', note: 'A moderator is having a look; only you can see it.' },
     unpublished: { label: 'Unpublished', variant: 'danger', note: 'A moderator pulled this from the catalogue.' },
+};
+
+/** The shelves the list can be narrowed to; "all" sends no filter at all. */
+type Shelf = 'all' | 'draft' | 'pending' | 'approved';
+
+const SHELVES: Array<{ value: Shelf; label: string }> = [
+    { value: 'all', label: 'Everything' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'pending', label: 'In review' },
+    { value: 'approved', label: 'Published' },
+];
+
+const EMPTY: Record<Shelf, { title: string; description: string }> = {
+    all: { title: 'No recipes yet', description: 'Write up a dish you cook often. Save it as a draft, or publish it once a moderator has had a look.' },
+    draft: { title: 'No drafts', description: 'A recipe you save as a draft waits here, private to you, until you publish it.' },
+    pending: { title: 'Nothing in review', description: 'Recipes you publish sit here while a moderator reads them over.' },
+    approved: { title: 'Nothing published yet', description: 'Once a moderator approves one of your recipes it shows up here, and in the catalogue.' },
 };
 
 const Row: React.FC<{ recipe: RecipeList }> = ({ recipe }) => {
@@ -50,15 +68,47 @@ const Row: React.FC<{ recipe: RecipeList }> = ({ recipe }) => {
     );
 };
 
+const ShelfChip: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={`inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:outline-3 focus-visible:outline-primary focus-visible:outline-offset-2 ${
+            active ? 'border-primary bg-primary text-on-primary' : 'border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink'
+        }`}
+    >
+        {children}
+    </button>
+);
+
 export const MyRecipesPage: React.FC = () => {
     const navigate = useNavigate();
     const { page, setPage } = useRecipeFilters();
-    const { data, isLoading } = useQuery({ queryKey: ['my-recipes', page], queryFn: () => accountApi.myRecipes(page) });
+    const [shelf, setShelf] = useState<Shelf>('all');
+    const { data, isLoading } = useQuery({
+        queryKey: ['my-recipes', page, shelf],
+        queryFn: () => accountApi.myRecipes(page, shelf === 'all' ? undefined : shelf),
+    });
 
     const recipes = data?.data ?? [];
 
     return (
-        <AccountLayout title="Recipes you posted." blurb="Everything you have written up, including the ones still waiting on a moderator.">
+        <AccountLayout title="Recipes you posted." blurb="Everything you have written up: your private drafts, the ones waiting on a moderator, and the ones that went live.">
+            <div role="group" aria-label="Filter by status" className="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+                {SHELVES.map(({ value, label }) => (
+                    <ShelfChip
+                        key={value}
+                        active={shelf === value}
+                        onClick={() => {
+                            setShelf(value);
+                            setPage(1);
+                        }}
+                    >
+                        {label}
+                    </ShelfChip>
+                ))}
+            </div>
+
             {isLoading ? (
                 <ul className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface" aria-hidden="true">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -71,8 +121,8 @@ export const MyRecipesPage: React.FC = () => {
             ) : recipes.length === 0 ? (
                 <EmptyState
                     icon={ChefHat}
-                    title="No recipes yet"
-                    description="Write up a dish you cook often. It goes live once a moderator has had a look."
+                    title={EMPTY[shelf].title}
+                    description={EMPTY[shelf].description}
                     actionLabel="Post a recipe"
                     onAction={() => navigate('/recipes/create')}
                 />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteSettings } from '../../features/site/useSiteSettings';
 import { useMealPlanCount } from '../../features/meal-plan/useMealPlan';
@@ -10,6 +10,7 @@ import { CountBadge } from '../ui/Badge';
 import { IconButton } from '../ui/IconButton';
 import { Logo } from './Logo';
 import { AccountDropdown } from './AccountMenu';
+import { ThemeToggle } from './ThemeToggle';
 import { useScrolled } from './useScrolled';
 
 /** Pages that own a search control of their own; the header stays out of their way. */
@@ -84,14 +85,11 @@ export const Header: React.FC = () => {
                         </>
                     )}
 
+                    <ThemeToggle />
+
                     <div className="hidden items-center gap-2 lg:flex">
                         {user ? (
-                            <>
-                                <ButtonLink to="/recipes/create" size="sm">
-                                    <Plus className="size-4" aria-hidden="true" /> Post a recipe
-                                </ButtonLink>
-                                <AccountDropdown />
-                            </>
+                            <AccountDropdown />
                         ) : (
                             <>
                                 <ButtonLink to="/login" variant="ghost" size="sm">

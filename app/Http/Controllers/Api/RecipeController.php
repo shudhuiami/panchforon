@@ -16,6 +16,7 @@ use App\Models\RecipeIngredient;
 use App\Models\User;
 use App\Services\IngredientParser;
 use App\Services\RankingService;
+use App\Services\SettingsRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -82,7 +83,7 @@ class RecipeController extends Controller
         $recipe = Recipe::create([
             'user_id' => $userId,
             'source' => RecipeSource::User,
-            'moderation_status' => ModerationStatus::Pending,
+            'moderation_status' => $request->moderationStatus(),
             'title' => $title,
             'slug' => $slug,
             'cuisine' => $request->cuisine,
@@ -132,6 +133,10 @@ class RecipeController extends Controller
 
     /**
      * Update an existing recipe (owner only).
+     *
+     * The moderation status is left alone unless the recipe is a draft and the
+     * author asked for it to be published, so editing a live recipe can never
+     * pull it off the site.
      */
     public function update(
         UpdateRecipeRequest $request,
@@ -145,6 +150,11 @@ class RecipeController extends Controller
         }
 
         $data = $request->safe()->only(['cuisine', 'category', 'instructions', 'image_url', 'servings', 'source_url']);
+
+        if ($recipe->isDraft() && $request->publishesDraft()) {
+            $this->assertSubmissionsOpen();
+            $data['moderation_status'] = ModerationStatus::Pending;
+        }
 
         if ($request->has('title')) {
             $newTitle = (string) $request->title;
@@ -190,6 +200,33 @@ class RecipeController extends Controller
                 ]);
             }
         }
+
+        $recipe->load(['user', 'ingredients.ingredient', 'stat', 'ratings.user']);
+
+        return new RecipeDetailResource($recipe);
+    }
+
+    /**
+     * Submit a draft for review (owner only). It becomes a normal pending
+     * submission from here; a moderator publishes it exactly as they would any
+     * other. Anything that is not a draft is already past this point, so it is
+     * a 422 rather than a silent success.
+     */
+    public function publish(Request $request, int $id): RecipeDetailResource
+    {
+        $recipe = Recipe::findOrFail($id);
+
+        if ((int) $recipe->user_id !== (int) $request->user()->id) {
+            abort(403, 'You are not authorized to publish this recipe.');
+        }
+
+        if (! $recipe->isDraft()) {
+            abort(422, 'Only a draft can be published.');
+        }
+
+        $this->assertSubmissionsOpen();
+
+        $recipe->update(['moderation_status' => ModerationStatus::Pending]);
 
         $recipe->load(['user', 'ingredients.ingredient', 'stat', 'ratings.user']);
 
@@ -253,10 +290,25 @@ class RecipeController extends Controller
     }
 
     /**
-     * A recipe that is not approved stays readable by its author and by
-     * admins, so submitting one does not look like it silently vanished.
-     * Everyone else gets a 404 rather than a 403, which would confirm that
-     * the recipe exists.
+     * Joining the review queue is a submission, so it honours the same
+     * "submissions open" toggle the store endpoint does. Keeping a private
+     * draft never does, which stops the toggle being sidestepped by saving a
+     * draft first and publishing it a moment later.
+     */
+    protected function assertSubmissionsOpen(): void
+    {
+        abort_unless(
+            app(SettingsRepository::class)->boolean('submissions_open', true),
+            403,
+            'Recipe submissions are currently closed.',
+        );
+    }
+
+    /**
+     * A recipe that is not approved — a draft, a submission awaiting review or
+     * one an admin pulled — stays readable by its author and by admins, so
+     * submitting one does not look like it silently vanished. Everyone else
+     * gets a 404 rather than a 403, which would confirm that the recipe exists.
      */
     protected function canViewRecipe(Request $request, Recipe $recipe): bool
     {

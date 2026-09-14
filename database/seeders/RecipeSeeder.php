@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\DTOs\RecipePlanItemInput;
+use App\Enums\MealSlot;
 use App\Enums\RecipeSource;
 use App\Models\Ingredient;
 use App\Models\MealPlan;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Services\IngredientParser;
 use App\Services\MergeEngine;
 use App\Services\RankingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -187,21 +189,28 @@ class RecipeSeeder extends Seeder
         }
 
         // Setup demo active meal plan with items and shopping list
+        $planStart = CarbonImmutable::today();
+
         $plan = MealPlan::create([
             'user_id' => $demoUser->id,
             'name' => 'This week',
+            'starts_on' => $planStart,
+            'ends_on' => $planStart->addDays(MealPlan::DEFAULT_DAYS - 1),
             'is_active' => true,
         ]);
 
-        // Add 3 recipes to this plan
+        // Add 3 recipes to this plan, one dinner per day so the calendar has
+        // something in it to look at.
         $planRecipes = array_slice($createdRecipes, 0, 3);
         $planInputs = [];
 
-        foreach ($planRecipes as $pr) {
+        foreach ($planRecipes as $dayOffset => $pr) {
             MealPlanItem::create([
                 'meal_plan_id' => $plan->id,
                 'recipe_id' => $pr->id,
                 'servings' => 4,
+                'planned_for' => $planStart->addDays($dayOffset),
+                'meal_slot' => MealSlot::Dinner,
             ]);
 
             $multiplier = 4 / ($pr->servings ?: 4);

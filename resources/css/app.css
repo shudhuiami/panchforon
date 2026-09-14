@@ -23,6 +23,17 @@
     --line: rgba(255, 240, 224, 0.10);
     --line-strong: rgba(255, 240, 224, 0.20);
 
+    /* Theme-dependent material: the frosted bar, the dot pattern, the fade
+       over card images, and the ambient glows behind the page. Light mode
+       redefines these along with the palette. */
+    --glass-bg: rgba(20, 16, 13, 0.66);
+    --dot-ink: rgba(255, 240, 224, 0.14);
+    --fade-base: 20, 16, 13;
+    --ink-gradient-end: #1A1220;
+    --glow-primary: rgba(252, 113, 0, 0.14);
+    --glow-plum: rgba(155, 133, 255, 0.12);
+    --glow-mint: rgba(42, 211, 177, 0.08);
+
     /* Foreground */
     --ink: #F6EEE4;
     --ink-2: #C9BEB2;
@@ -52,6 +63,73 @@
     --plum: #9B85FF;
     --plum-deep: #5A3FD6;
     --plum-soft: rgba(155, 133, 255, 0.16);
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT THEME — the same palette turned over: warm paper instead of warm
+   near-black. Dark is the default, so nothing here applies until the theme
+   toggle (or the pre-paint script in app.blade.php) stamps data-theme.
+
+   Text colours are darkened until every one of them clears 4.5:1 on the
+   canvas, the surface and the soft tint plates; the pumpkin keeps its hue
+   but drops to #A34900, since #FC7100 as text on paper is only 2.9:1.
+   -------------------------------------------------------------------------- */
+:root[data-theme='light'] {
+    color-scheme: light;
+
+    --canvas: #FBF7F1;
+    --surface: #FFFFFF;
+    --surface-2: #F3EBE0;
+    --surface-3: #E8DCCB;
+    --line: rgba(26, 18, 8, 0.12);
+    --line-strong: rgba(26, 18, 8, 0.24);
+
+    --glass-bg: rgba(255, 252, 247, 0.74);
+    --dot-ink: rgba(26, 18, 8, 0.10);
+    --fade-base: 255, 252, 247;
+    --ink-gradient-end: #EFE3D2;
+    --glow-primary: rgba(252, 113, 0, 0.10);
+    --glow-plum: rgba(82, 51, 204, 0.07);
+    --glow-mint: rgba(10, 115, 96, 0.06);
+
+    --ink: #1A1208;
+    --ink-2: #5A4C3D;
+    --ink-3: #6F6150;
+    --on-primary: #FFFFFF;   /* 6.0:1 on the primary fill */
+
+    --primary: #A34900;
+    --primary-hover: #8A3D00;
+    --primary-deep: #6E3100;
+    --primary-soft: rgba(252, 113, 0, 0.16);
+    --accent: #FC7100;       /* the bright pumpkin stays, for decorative fills */
+
+    --hot: #C4141D;
+    --hot-deep: #8E0F16;
+    --hot-soft: rgba(196, 20, 29, 0.12);
+    --success: #3F6F24;
+    --success-deep: #2C4E19;
+    --success-soft: rgba(63, 111, 36, 0.12);
+    --turmeric: #8A6400;
+    --turmeric-deep: #5E4400;
+    --turmeric-soft: rgba(138, 100, 0, 0.14);
+    --mint: #0A7360;
+    --mint-deep: #05503F;
+    --mint-soft: rgba(10, 115, 96, 0.12);
+    --plum: #5233CC;
+    --plum-deep: #3A2394;
+    --plum-soft: rgba(82, 51, 204, 0.12);
+
+    /* On paper a grey shadow reads as depth again, so the plates lift rather
+       than relying on darker fills. */
+    --shadow-sm: 0 1px 2px rgba(26, 18, 8, 0.08);
+    --shadow-md: 0 8px 20px -6px rgba(26, 18, 8, 0.14);
+    --shadow-lg: 0 18px 36px -10px rgba(26, 18, 8, 0.18);
+    --shadow-xl: 0 30px 56px -14px rgba(26, 18, 8, 0.22);
+    --shadow-glow-primary: 0 12px 32px -8px rgba(252, 113, 0, 0.35);
+    --shadow-glow-hot: 0 12px 32px -8px rgba(196, 20, 29, 0.28);
+    --shadow-glow-mint: 0 12px 32px -8px rgba(10, 115, 96, 0.26);
+    --shadow-glow-plum: 0 12px 32px -8px rgba(82, 51, 204, 0.28);
+    --shadow-glow-turmeric: 0 12px 32px -8px rgba(138, 100, 0, 0.28);
 }
 
 @theme {
@@ -153,9 +231,9 @@
         -moz-osx-font-smoothing: grayscale;
         /* The colour in "dark but colourful": ambient warm glows, never a flat grey */
         background-image:
-            radial-gradient(70rem 42rem at -12% -10%, rgba(252, 113, 0, 0.14), transparent 60%),
-            radial-gradient(52rem 36rem at 112% 4%, rgba(155, 133, 255, 0.12), transparent 60%),
-            radial-gradient(48rem 48rem at 50% 125%, rgba(42, 211, 177, 0.08), transparent 60%);
+            radial-gradient(70rem 42rem at -12% -10%, var(--glow-primary), transparent 60%),
+            radial-gradient(52rem 36rem at 112% 4%, var(--glow-plum), transparent 60%),
+            radial-gradient(48rem 48rem at 50% 125%, var(--glow-mint), transparent 60%);
         background-attachment: fixed;
     }
     h1, h2, h3, h4, h5, h6 {
@@ -189,11 +267,11 @@
     .bg-sunrise-gradient { --bg-gradient: linear-gradient(120deg, var(--turmeric), var(--primary) 60%, var(--hot)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
     .bg-mint-gradient { --bg-gradient: linear-gradient(120deg, var(--mint-deep), var(--mint)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
     .bg-plum-gradient { --bg-gradient: linear-gradient(120deg, var(--plum-deep), var(--plum)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
-    .bg-ink-gradient { --bg-gradient: linear-gradient(140deg, var(--surface-3), var(--surface) 60%, #1A1220); background-image: var(--bg-pattern, none), var(--bg-gradient); }
+    .bg-ink-gradient { --bg-gradient: linear-gradient(140deg, var(--surface-3), var(--surface) 60%, var(--ink-gradient-end)); background-image: var(--bg-pattern, none), var(--bg-gradient); }
 
     /* Patterns */
     .bg-dots {
-        --bg-pattern: radial-gradient(rgba(255, 240, 224, 0.14) 1.2px, transparent 1.2px);
+        --bg-pattern: radial-gradient(var(--dot-ink) 1.2px, transparent 1.2px);
         background-image: var(--bg-pattern), var(--bg-gradient, none);
         background-size: 18px 18px, auto;
     }
@@ -205,7 +283,7 @@
 
     /* Frosted bar: the sticky header and the form's save bar */
     .glass {
-        background: rgba(20, 16, 13, 0.66);
+        background: var(--glass-bg);
         backdrop-filter: blur(18px) saturate(160%);
         -webkit-backdrop-filter: blur(18px) saturate(160%);
         border: 1px solid var(--line);
@@ -242,7 +320,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* Card image gradient overlay — fades into the surface colour */
-    .img-fade { background: linear-gradient(to top, rgba(20, 16, 13, 0.9) 0%, rgba(20, 16, 13, 0.3) 45%, transparent 75%); }
+    .img-fade { background: linear-gradient(to top, rgba(var(--fade-base), 0.92) 0%, rgba(var(--fade-base), 0.32) 45%, transparent 75%); }
 }
 
 /* ==========================================================================
@@ -257,6 +335,8 @@
 @keyframes wiggle { 0%,100% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } }
 @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
 @keyframes popIn { 0% { opacity: 0; transform: scale(.6) } 70% { transform: scale(1.08) } 100% { opacity: 1; transform: scale(1) } }
+/* Switching section inside a page: shorter and shallower than a page entrance */
+@keyframes sectionIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
 
 .animate-fade-in { animation: fadeIn .4s var(--ease-out-expo) both; }
 .animate-slide-up { animation: slideUpFade .55s var(--ease-out-expo) both; }
@@ -265,6 +345,7 @@
 .animate-spin-slow { animation: spinSlow 18s linear infinite; }
 .animate-wiggle { animation: wiggle 2.4s ease-in-out infinite; }
 .animate-pop-in { animation: popIn .45s var(--ease-spring) both; }
+.animate-section-in { animation: sectionIn .4s var(--ease-out-expo) both; }
 .skeleton-shimmer {
     background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
     background-size: 200% 100%;

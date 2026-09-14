@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ModerationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
@@ -62,14 +63,24 @@ class AccountController extends Controller
 
     /**
      * The cook's own recipes, whatever their moderation status.
+     *
+     * An optional ?status= narrows that to one shelf — their drafts, the ones
+     * in review, the published ones — using the same values the API reports on
+     * each recipe. Anything unrecognised is ignored and the whole list comes
+     * back, which is also what happens when the parameter is absent.
      */
     public function recipes(Request $request): AnonymousResourceCollection
     {
-        $recipes = $this->user($request)
-            ->recipes()
-            ->with('stat')
-            ->latest()
-            ->paginate(max(1, min($request->integer('per_page', 12), 50)));
+        $query = $this->user($request)->recipes()->with('stat');
+
+        $requested = $request->input('status');
+        $status = is_string($requested) ? ModerationStatus::tryFrom($requested) : null;
+
+        if ($status instanceof ModerationStatus) {
+            $query->where('recipes.moderation_status', $status);
+        }
+
+        $recipes = $query->latest()->paginate(max(1, min($request->integer('per_page', 12), 50)));
 
         return RecipeListResource::collection($recipes);
     }

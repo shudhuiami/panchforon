@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Plus, Scale, ShoppingBasket, SplitSquareHorizontal, Utensils, X, PenLine, type LucideIcon } from 'lucide-react';
-import { mealPlanApi } from '../api/mealPlan';
+import {
+    AlertTriangle,
+    CalendarRange,
+    EyeOff,
+    History,
+    PenLine,
+    Plus,
+    Scale,
+    ShoppingBasket,
+    SplitSquareHorizontal,
+    Utensils,
+    type LucideIcon,
+} from 'lucide-react';
+import { ApiError } from '../api/client';
 import { MealPlanItem } from '../types/api';
-import { Button, ButtonLink } from '../components/ui/Button';
-import { IconButton } from '../components/ui/IconButton';
-import { Photo } from '../components/ui/Photo';
+import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
 import { StatusPanel } from '../components/common/StatusPanel';
 import { Reveal } from '../components/motion/Reveal';
-import { RecipeFallback } from '../features/recipes/RecipeCard';
-import { ServingsControl } from '../features/meal-plan/ServingsControl';
+import { AddDishModal } from '../features/meal-plan/AddDishModal';
+import { PlanDayColumn } from '../features/meal-plan/PlanDayColumn';
+import { PlanDishRow } from '../features/meal-plan/PlanDishRow';
+import { PlanRangeForm } from '../features/meal-plan/PlanRangeForm';
+import { IsoDate, clampIso, formatRange, listRange, todayIso } from '../features/meal-plan/dates';
+import { useGenerateShoppingList, useMealPlan, useUpdatePlan } from '../features/meal-plan/useMealPlan';
 
 const MERGE_RULES: Array<{ icon: LucideIcon; tone: string; title: string; text: string }> = [
     { icon: Scale, tone: 'text-primary', title: 'Scaled', text: 'Portions multiply cleanly with the servings you set here.' },
@@ -21,76 +34,78 @@ const MERGE_RULES: Array<{ icon: LucideIcon; tone: string; title: string; text: 
     { icon: PenLine, tone: 'text-turmeric', title: 'As written', text: 'Pinches and “to taste” lines stay exactly as the cook wrote them.' },
 ];
 
-const PlanItem: React.FC<{ item: MealPlanItem; onRemove: () => void; isRemoving: boolean }> = ({ item, onRemove, isRemoving }) => {
-    const recipe = item.recipe;
-    const to = `/recipes/${recipe?.slug ?? item.recipe_id}`;
-    const title = recipe?.title ?? `Recipe #${item.recipe_id}`;
-
-    return (
-        <li className={`flex flex-col gap-4 rounded-3xl border border-line bg-surface p-4 transition-opacity sm:p-5 ${isRemoving ? 'pointer-events-none opacity-50' : ''}`}>
-            <div className="flex items-start gap-4">
-                <Link to={to} tabIndex={-1} aria-hidden="true" className="block size-20 shrink-0 overflow-hidden rounded-2xl bg-surface-2">
-                    <Photo src={recipe?.image_url} alt="" loading="lazy" className="h-full w-full object-cover" fallback={<RecipeFallback recipe={{ id: item.recipe_id, title }} />} />
-                </Link>
-                <div className="min-w-0 flex-1">
-                    <p className="text-xs text-ink-3">{[recipe?.cuisine, recipe?.category].filter(Boolean).join(' · ') || 'Recipe'}</p>
-                    <Link to={to} className="mt-1 line-clamp-2 block font-display text-lg leading-tight font-semibold text-ink transition-colors hover:text-primary">
-                        {title}
-                    </Link>
-                    <p className="mt-1 text-xs text-ink-3">Written for {recipe?.servings ?? 4} servings</p>
-                </div>
-                <IconButton label={`Remove ${title} from the plan`} variant="ghost" size="sm" onClick={onRemove} disabled={isRemoving}>
-                    <X className="size-4" />
-                </IconButton>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                <span className="text-xs font-semibold tracking-[0.14em] text-ink-3 uppercase">Cook for</span>
-                <ServingsControl itemId={item.id} currentServings={item.servings} />
-            </div>
-        </li>
-    );
-};
-
 export const MealPlanPage: React.FC = () => {
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
+    const { data, isLoading, error } = useMealPlan();
+    const updatePlan = useUpdatePlan();
+    const generateList = useGenerateShoppingList();
 
-    const { data, isLoading, error } = useQuery({ queryKey: ['mealPlan'], queryFn: () => mealPlanApi.get() });
-    const items = data?.data.items ?? [];
+    const [isEditingRange, setIsEditingRange] = useState(false);
+    const [hideEmptyDays, setHideEmptyDays] = useState(false);
+    const [addTarget, setAddTarget] = useState<{ day: IsoDate | null } | null>(null);
 
-    const removeMutation = useMutation({
-        mutationFn: (itemId: number) => mealPlanApi.removeItem(itemId),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mealPlan'] }),
-    });
+    const plan = data?.data;
+    const items = useMemo(() => plan?.items ?? [], [plan]);
+    const days = useMemo(() => (plan ? listRange(plan.starts_on, plan.ends_on) : []), [plan]);
 
-    const generateMutation = useMutation({
-        mutationFn: () => mealPlanApi.generateShoppingList(),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
-            navigate('/shopping-list');
-        },
-    });
+    const byDay = useMemo(() => {
+        const map = new Map<string, MealPlanItem[]>();
+        for (const item of items) {
+            const key = item.planned_for ?? '';
+            const bucket = map.get(key);
+            if (bucket) bucket.push(item);
+            else map.set(key, [item]);
+        }
+        return map;
+    }, [items]);
 
     if (isLoading) return <LoadingSpinner message="Loading your plan…" />;
-    if (error) {
+    if (error || !plan) {
         return <StatusPanel icon={AlertTriangle} tone="danger" title="Couldn’t load your plan" text="Refresh the page or try again in a moment." />;
     }
 
+    /** Undated dishes, plus any the API left pointing at a day this range no longer covers. */
+    const dayKeys = new Set(days);
+    const undated = [...byDay.entries()].filter(([key]) => key === '' || !dayKeys.has(key)).flatMap(([, bucket]) => bucket);
+    const scheduledCount = items.length - undated.length;
     const totalServings = items.reduce((sum, item) => sum + (item.servings || 0), 0);
-    const cuisineCount = new Set(items.map((item) => item.recipe?.cuisine).filter((c): c is string => !!c)).size;
+    const visibleDays = hideEmptyDays ? days.filter((day) => (byDay.get(day)?.length ?? 0) > 0) : days;
+
     const stats = [
+        { value: plan.day_count, label: plan.day_count === 1 ? 'day' : 'days' },
         { value: items.length, label: items.length === 1 ? 'dish' : 'dishes' },
         { value: totalServings, label: 'servings' },
-        { value: cuisineCount, label: cuisineCount === 1 ? 'cuisine' : 'cuisines' },
+        ...(undated.length > 0 ? [{ value: undated.length, label: 'not dated' }] : []),
     ];
+
+    /** A plan already under way keeps its own first day as the floor; a future one can only come forward to today. */
+    const rangeFloor = plan.starts_on < todayIso() ? plan.starts_on : todayIso();
+    const defaultAddDay = clampIso(todayIso(), plan.starts_on, plan.ends_on);
 
     return (
         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
             <header className="flex animate-slide-up flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="max-w-2xl">
-                    <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">Meal plan</p>
-                    <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink text-balance sm:text-5xl lg:text-6xl">Your week’s table.</h1>
-                    <p className="mt-4 text-base text-ink-2 sm:text-lg">Scale portions, swap dishes, and turn the whole week into one shopping run.</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">Meal plan</p>
+                        <Link to="/plans" className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-3 transition-colors hover:text-ink">
+                            <History className="size-3.5" aria-hidden="true" />
+                            All your plans
+                        </Link>
+                    </div>
+                    <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink text-balance sm:text-5xl lg:text-6xl">{plan.name}</h1>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink-2">
+                            <CalendarRange className="size-4 text-primary" aria-hidden="true" />
+                            {formatRange(plan.starts_on, plan.ends_on)}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditingRange((open) => !open)} aria-expanded={isEditingRange} aria-controls="plan-range-editor">
+                            <PenLine className="size-4" aria-hidden="true" />
+                            {isEditingRange ? 'Close the dates' : 'Change the dates'}
+                        </Button>
+                    </div>
+
                     <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
                         {stats.map(({ value, label }) => (
                             <div key={label} className="flex items-baseline gap-1.5">
@@ -100,46 +115,111 @@ export const MealPlanPage: React.FC = () => {
                         ))}
                     </dl>
                 </div>
+
                 <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
                     {items.length > 0 && (
-                        <Button size="lg" onClick={() => generateMutation.mutate()} isLoading={generateMutation.isPending}>
+                        <Button
+                            size="lg"
+                            onClick={() => generateList.mutate(undefined, { onSuccess: () => navigate('/shopping-list') })}
+                            isLoading={generateList.isPending}
+                        >
                             <ShoppingBasket className="size-4" aria-hidden="true" />
                             Build the shopping list
                         </Button>
                     )}
-                    <ButtonLink to="/recipes" variant="outline" size="lg">
+                    <Button variant="outline" size="lg" onClick={() => setAddTarget({ day: defaultAddDay })}>
                         <Plus className="size-4" aria-hidden="true" />
                         Add dishes
-                    </ButtonLink>
+                    </Button>
                 </div>
             </header>
 
-            {generateMutation.isError && (
+            {generateList.isError && (
                 <Alert variant="error" className="mt-6">
                     The shopping list couldn’t be built just now. Please try again.
                 </Alert>
             )}
 
-            <section className="mt-10" aria-label="Planned dishes">
+            {isEditingRange && (
+                <section id="plan-range-editor" className="mt-6 rounded-3xl border border-line bg-surface p-5 sm:p-7" aria-label="Plan dates">
+                    <h2 className="font-display text-xl font-semibold text-ink">When are you cooking?</h2>
+                    <p className="mt-1 mb-5 text-sm text-ink-2">
+                        Dishes that fall outside a shorter range aren’t lost — they move to the undated tray at the top of the plan.
+                    </p>
+                    <PlanRangeForm
+                        idPrefix="plan-range"
+                        initialStart={plan.starts_on}
+                        initialEnd={plan.ends_on}
+                        minStart={rangeFloor}
+                        submitLabel="Save the dates"
+                        isPending={updatePlan.isPending}
+                        errorMessage={updatePlan.isError ? (updatePlan.error instanceof ApiError ? updatePlan.error.message : 'Those dates couldn’t be saved.') : null}
+                        onSubmit={(values) =>
+                            updatePlan.mutate(
+                                { id: plan.id, changes: { starts_on: values.starts_on, ends_on: values.ends_on } },
+                                { onSuccess: () => setIsEditingRange(false) },
+                            )
+                        }
+                        onCancel={() => setIsEditingRange(false)}
+                    />
+                </section>
+            )}
+
+            {undated.length > 0 && (
+                <section className="mt-8 rounded-3xl border border-dashed border-line-strong bg-surface-2 p-5 sm:p-6" aria-labelledby="undated-heading">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 id="undated-heading" className="font-display text-xl font-semibold text-ink">
+                                Picked, not yet dated
+                            </h2>
+                            <p className="mt-1 text-sm text-ink-2">Give each one a day and it joins the right column below.</p>
+                        </div>
+                        <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-ink-2 tabular-nums">
+                            {undated.length} {undated.length === 1 ? 'dish' : 'dishes'}
+                        </span>
+                    </div>
+                    <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {undated.map((item) => (
+                            <PlanDishRow key={item.id} item={item} days={days} />
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            <section className="mt-8" aria-label="Days in this plan">
                 {items.length === 0 ? (
                     <EmptyState
                         icon={Utensils}
-                        title="Your plate is empty"
-                        description="Add a few dishes from the catalogue and they’ll show up here, ready to scale and shop for."
-                        actionLabel="Discover recipes"
-                        onAction={() => navigate('/recipes')}
+                        title="Nothing planned yet"
+                        description="Pick the days you’re cooking for, then drop a dish onto each one. Every dish you add here ends up on one shopping list."
+                        actionLabel="Find dishes"
+                        onAction={() => setAddTarget({ day: defaultAddDay })}
                     />
                 ) : (
-                    <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {items.map((item) => (
-                            <PlanItem
-                                key={item.id}
-                                item={item}
-                                onRemove={() => removeMutation.mutate(item.id)}
-                                isRemoving={removeMutation.isPending && removeMutation.variables === item.id}
-                            />
-                        ))}
-                    </ul>
+                    <>
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <h2 className="font-display text-2xl font-semibold text-ink">
+                                {scheduledCount} {scheduledCount === 1 ? 'dish' : 'dishes'} across {plan.day_count} {plan.day_count === 1 ? 'day' : 'days'}
+                            </h2>
+                            {days.length > 7 && (
+                                <Button variant="ghost" size="sm" onClick={() => setHideEmptyDays((hidden) => !hidden)} aria-pressed={hideEmptyDays}>
+                                    <EyeOff className="size-4" aria-hidden="true" />
+                                    {hideEmptyDays ? 'Show every day' : 'Hide empty days'}
+                                </Button>
+                            )}
+                        </div>
+                        {visibleDays.length === 0 ? (
+                            <p className="rounded-3xl border border-dashed border-line-strong bg-surface p-8 text-center text-sm text-ink-3">
+                                No day has a dish on it yet.
+                            </p>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                                {visibleDays.map((day) => (
+                                    <PlanDayColumn key={day} iso={day} items={byDay.get(day) ?? []} days={days} onAddDish={(iso) => setAddTarget({ day: iso })} />
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
             </section>
 
@@ -161,6 +241,8 @@ export const MealPlanPage: React.FC = () => {
                     ))}
                 </ul>
             </Reveal>
+
+            <AddDishModal isOpen={addTarget !== null} onClose={() => setAddTarget(null)} day={addTarget?.day ?? null} days={days} />
         </div>
     );
 };

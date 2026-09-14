@@ -47,6 +47,24 @@ test('an admin can unpublish a recipe, which removes it from the public list', f
     $this->getJson('/api/recipes')->assertJsonCount(0, 'data');
 });
 
+test('a draft never reaches the review queue and cannot be approved from the table', function () {
+    $admin = User::factory()->admin()->create();
+    $draft = Recipe::factory()->create(['moderation_status' => ModerationStatus::Draft]);
+    $pending = Recipe::factory()->awaitingModeration()->create();
+
+    $this->actingAs($admin);
+
+    Livewire::test(ListRecipes::class, ['activeTab' => 'queue'])
+        ->assertCanSeeTableRecords([$pending])
+        ->assertCanNotSeeTableRecords([$draft]);
+
+    Livewire::test(ListRecipes::class)
+        ->assertActionHidden(TestAction::make('approve')->table($draft))
+        ->assertActionVisible(TestAction::make('approve')->table($pending));
+
+    expect(Recipe::query()->awaitingModeration()->count())->toBe(1);
+});
+
 test('imported recipes cannot be moderated', function () {
     $admin = User::factory()->admin()->create();
     $imported = Recipe::factory()->fromApi()->create();
@@ -127,4 +145,20 @@ test('a suspended admin cannot moderate', function () {
 
     expect($recipe->fresh()->moderation_status)->toBe(ModerationStatus::Pending)
         ->and(Gate::forUser($suspended)->allows('moderate', $recipe))->toBeFalse();
+});
+
+test('bulk approve skips a draft caught up in the selection', function () {
+    $admin = User::factory()->admin()->create();
+    $pending = Recipe::factory()->awaitingModeration()->create();
+    $draft = Recipe::factory()->create(['moderation_status' => ModerationStatus::Draft]);
+
+    $this->actingAs($admin);
+
+    Livewire::test(ListRecipes::class)
+        ->callTableBulkAction('approveSelected', collect([$pending, $draft]))
+        ->assertHasNoActionErrors();
+
+    expect($pending->fresh()->moderation_status)->toBe(ModerationStatus::Approved)
+        ->and($draft->fresh()->moderation_status)->toBe(ModerationStatus::Draft)
+        ->and($draft->fresh()->moderated_by)->toBeNull();
 });

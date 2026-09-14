@@ -2,11 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\MealSlot;
 use Database\Factories\MealPlanItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $planned_for
+ * @property MealSlot $meal_slot
+ */
 class MealPlanItem extends Model
 {
     /** @use HasFactory<MealPlanItemFactory> */
@@ -19,6 +25,8 @@ class MealPlanItem extends Model
         'meal_plan_id',
         'recipe_id',
         'servings',
+        'planned_for',
+        'meal_slot',
     ];
 
     /**
@@ -28,6 +36,8 @@ class MealPlanItem extends Model
     {
         return [
             'servings' => 'integer',
+            'planned_for' => 'date',
+            'meal_slot' => MealSlot::class,
         ];
     }
 
