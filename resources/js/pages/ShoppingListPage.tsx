@@ -161,7 +161,10 @@ export const ShoppingListPage: React.FC = () => {
 
             <p className="mt-8 flex items-start gap-3 rounded-3xl border border-line bg-surface-2 p-5 text-sm text-ink-2 print:hidden">
                 <Info className="mt-0.5 size-4 shrink-0 text-turmeric" aria-hidden="true" />
-                Weights and volumes never merge with each other, and every line notes which dishes it came from.
+                <span>
+                    Weights and volumes never merge with each other, and every line notes which dishes it came from. A line with a dashed edge, marked{' '}
+                    <span className="text-ink-3 italic">optional</span>, is one every dish it came from could do without.
+                </span>
             </p>
         </div>
     );

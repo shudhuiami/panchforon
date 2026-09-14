@@ -50,7 +50,7 @@ export const ShoppingListItemRow: React.FC<{ item: ShoppingListItem }> = ({ item
             }}
             className={`group flex min-h-14 cursor-pointer items-center gap-3.5 rounded-2xl border px-3.5 py-3 transition-[border-color,opacity,background-color] duration-300 select-none focus-visible:outline-3 focus-visible:outline-primary focus-visible:outline-offset-2 ${
                 item.is_checked ? 'border-transparent bg-surface-2/50 opacity-60' : 'border-line bg-surface-2 hover:border-mint/60'
-            }`}
+            } ${item.is_optional && !item.is_checked ? 'border-dashed' : ''}`}
         >
             <span
                 className={`flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
@@ -63,6 +63,8 @@ export const ShoppingListItemRow: React.FC<{ item: ShoppingListItem }> = ({ item
             <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                     <span className={`truncate text-[15px] font-medium capitalize transition-colors ${item.is_checked ? 'text-ink-3 line-through' : 'text-ink'}`}>{item.display_name}</span>
+                    {/* Skippable in the aisle: a word and a dashed edge, not a badge competing with the name. */}
+                    {item.is_optional && <span className="shrink-0 text-[11px] text-ink-3 italic">optional</span>}
                     {item.is_unmerged && <span className="shrink-0 rounded-full bg-hot-soft px-2 py-0.5 text-[10px] font-semibold tracking-wider text-hot uppercase">As written</span>}
                 </span>
                 {item.source_note && <span className="mt-0.5 block truncate text-[11px] text-ink-3">{item.source_note}</span>}
