@@ -4,7 +4,9 @@ namespace App\Filament\Resources\Recipes\Tables;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Enums\SpiceLevel;
 use App\Filament\Actions\RecipeModerationActions;
+use App\Filament\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -59,6 +61,32 @@ class RecipesTable
                     ->icon(fn (ModerationStatus $state): string => $state->icon())
                     ->sortable(),
 
+                /**
+                 * Prep and cook are two columns nobody scans; what a cook is
+                 * choosing on is the sum.
+                 */
+                TextColumn::make('total_minutes')
+                    ->label('Time')
+                    ->state(function (Recipe $record): ?string {
+                        $total = RecipeResource::totalMinutes($record);
+
+                        return $total === null ? null : "{$total} min";
+                    })
+                    ->alignEnd()
+                    ->placeholder('-')
+                    ->toggleable()
+                    ->visibleFrom('xl'),
+
+                TextColumn::make('spice_level')
+                    ->label('Spice')
+                    ->badge()
+                    ->formatStateUsing(fn (SpiceLevel $state): string => $state->label())
+                    ->color(fn (SpiceLevel $state): string => $state->color())
+                    ->placeholder('-')
+                    ->sortable()
+                    ->toggleable()
+                    ->visibleFrom('xl'),
+
                 TextColumn::make('stat.ratings_avg')
                     ->label('Rating')
                     ->numeric(decimalPlaces: 2)
@@ -94,6 +122,12 @@ class RecipesTable
                     ->label('Status')
                     ->options(collect(ModerationStatus::cases())
                         ->mapWithKeys(fn (ModerationStatus $status): array => [$status->value => $status->label()])
+                        ->all()),
+
+                SelectFilter::make('spice_level')
+                    ->label('Spice level')
+                    ->options(collect(SpiceLevel::cases())
+                        ->mapWithKeys(fn (SpiceLevel $level): array => [$level->value => $level->label()])
                         ->all()),
 
                 SelectFilter::make('cuisine')
