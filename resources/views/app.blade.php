@@ -30,6 +30,24 @@
             <meta property="og:image" content="{{ $meta['image'] }}">
             <meta name="twitter:image" content="{{ $meta['image'] }}">
         @endif
+        {{-- Theme: dark unless the visitor has chosen light. Stamped before the
+             stylesheet loads so the page never flashes the wrong canvas. --}}
+        <script>
+            (function () {
+                try {
+                    var stored = localStorage.getItem('panchforon_theme');
+                    var theme = stored === 'light' ? 'light' : 'dark';
+                    document.documentElement.dataset.theme = theme;
+                    if (theme === 'light') {
+                        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#FBF7F1');
+                        document.querySelector('meta[name="color-scheme"]').setAttribute('content', 'light');
+                    }
+                } catch (e) {
+                    document.documentElement.dataset.theme = 'dark';
+                }
+            })();
+        </script>
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>

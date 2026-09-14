@@ -10,6 +10,7 @@ import { CountBadge } from '../ui/Badge';
 import { IconButton } from '../ui/IconButton';
 import { Logo } from './Logo';
 import { AccountDropdown } from './AccountMenu';
+import { ThemeToggle } from './ThemeToggle';
 import { useScrolled } from './useScrolled';
 
 /** Pages that own a search control of their own; the header stays out of their way. */
@@ -83,6 +84,8 @@ export const Header: React.FC = () => {
                             </IconButton>
                         </>
                     )}
+
+                    <ThemeToggle />
 
                     <div className="hidden items-center gap-2 lg:flex">
                         {user ? (

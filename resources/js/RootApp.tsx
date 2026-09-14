@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/layout/AppShell';
 import { BareShell } from './components/layout/BareShell';
 import { RequireAuth } from './features/auth/RequireAuth';
@@ -37,38 +38,40 @@ const queryClient = new QueryClient({
 
 export const RootApp: React.FC = () => (
     <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-            <BrowserRouter>
-                <div className="bg-canvas text-ink">
-                    <Routes>
-                        <Route element={<AppShell />}>
-                            <Route path="/" element={<HomePage />} />
-                            <Route path="/recipes" element={<RecipesPage />} />
-                            <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
-                            <Route path="/cooks/:id" element={<CookPage />} />
-                            <Route path="/p/:slug" element={<ContentPage />} />
-                            <Route element={<RequireAuth />}>
-                                <Route path="/recipes/create" element={<CreateRecipePage />} />
-                                <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
-                                <Route path="/saved" element={<WishlistPage />} />
-                                <Route path="/account" element={<AccountPage />} />
-                                <Route path="/account/recipes" element={<MyRecipesPage />} />
-                                <Route path="/account/ratings" element={<MyRatingsPage />} />
-                                <Route path="/meal-plan" element={<MealPlanPage />} />
-                                <Route path="/shopping-list" element={<ShoppingListPage />} />
+        <ThemeProvider>
+            <AuthProvider>
+                <BrowserRouter>
+                    <div className="bg-canvas text-ink">
+                        <Routes>
+                            <Route element={<AppShell />}>
+                                <Route path="/" element={<HomePage />} />
+                                <Route path="/recipes" element={<RecipesPage />} />
+                                <Route path="/recipes/:slug" element={<RecipeDetailPage />} />
+                                <Route path="/cooks/:id" element={<CookPage />} />
+                                <Route path="/p/:slug" element={<ContentPage />} />
+                                <Route element={<RequireAuth />}>
+                                    <Route path="/recipes/create" element={<CreateRecipePage />} />
+                                    <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
+                                    <Route path="/saved" element={<WishlistPage />} />
+                                    <Route path="/account" element={<AccountPage />} />
+                                    <Route path="/account/recipes" element={<MyRecipesPage />} />
+                                    <Route path="/account/ratings" element={<MyRatingsPage />} />
+                                    <Route path="/meal-plan" element={<MealPlanPage />} />
+                                    <Route path="/shopping-list" element={<ShoppingListPage />} />
+                                </Route>
+                                <Route path="*" element={<NotFoundPage />} />
                             </Route>
-                            <Route path="*" element={<NotFoundPage />} />
-                        </Route>
-                        <Route element={<BareShell />}>
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                            <Route path="/reset-password" element={<ResetPasswordPage />} />
-                            <Route path="/login/social" element={<SocialCallbackPage />} />
-                        </Route>
-                    </Routes>
-                </div>
-            </BrowserRouter>
-        </AuthProvider>
+                            <Route element={<BareShell />}>
+                                <Route path="/login" element={<LoginPage />} />
+                                <Route path="/register" element={<RegisterPage />} />
+                                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                                <Route path="/login/social" element={<SocialCallbackPage />} />
+                            </Route>
+                        </Routes>
+                    </div>
+                </BrowserRouter>
+            </AuthProvider>
+        </ThemeProvider>
     </QueryClientProvider>
 );
