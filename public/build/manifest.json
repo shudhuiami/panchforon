@@ -1,0 +1,78 @@
+{
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-italic.woff2": {
+    "file": "assets/fraunces-latin-ext-opsz-italic-CGbN9UgK.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-italic.woff2"
+  },
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-normal.woff2": {
+    "file": "assets/fraunces-latin-ext-opsz-normal-CJcjJNj7.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-opsz-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-opsz-italic.woff2": {
+    "file": "assets/fraunces-latin-opsz-italic-lSdLDfvT.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-opsz-italic.woff2"
+  },
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2": {
+    "file": "assets/fraunces-latin-opsz-normal-DihXLNYH.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-vietnamese-opsz-italic.woff2": {
+    "file": "assets/fraunces-vietnamese-opsz-italic-DxWqP7Ku.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-vietnamese-opsz-italic.woff2"
+  },
+  "node_modules/@fontsource-variable/fraunces/files/fraunces-vietnamese-opsz-normal.woff2": {
+    "file": "assets/fraunces-vietnamese-opsz-normal-Czevyj-6.woff2",
+    "src": "node_modules/@fontsource-variable/fraunces/files/fraunces-vietnamese-opsz-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-ext-wght-normal.woff2": {
+    "file": "assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2",
+    "src": "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-ext-wght-normal.woff2"
+  },
+  "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2": {
+    "file": "assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2",
+    "src": "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-BIyc9jGC.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/filament/admin/theme.css": {
+    "file": "assets/theme-B7ySnOCQ.css",
+    "name": "theme",
+    "names": [
+      "theme.css"
+    ],
+    "src": "resources/css/filament/admin/theme.css",
+    "isEntry": true,
+    "assets": [
+      "assets/fraunces-vietnamese-opsz-normal-Czevyj-6.woff2",
+      "assets/fraunces-latin-ext-opsz-normal-CJcjJNj7.woff2",
+      "assets/fraunces-latin-opsz-normal-DihXLNYH.woff2",
+      "assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2",
+      "assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2"
+    ]
+  },
+  "resources/js/app.tsx": {
+    "file": "assets/app-DK_RwtON.js",
+    "name": "app",
+    "src": "resources/js/app.tsx",
+    "isEntry": true,
+    "css": [
+      "assets/app-CDNvzVGt.css"
+    ],
+    "assets": [
+      "assets/fraunces-vietnamese-opsz-normal-Czevyj-6.woff2",
+      "assets/fraunces-latin-ext-opsz-normal-CJcjJNj7.woff2",
+      "assets/fraunces-latin-opsz-normal-DihXLNYH.woff2",
+      "assets/fraunces-vietnamese-opsz-italic-DxWqP7Ku.woff2",
+      "assets/fraunces-latin-ext-opsz-italic-CGbN9UgK.woff2",
+      "assets/fraunces-latin-opsz-italic-lSdLDfvT.woff2",
+      "assets/instrument-sans-latin-ext-wght-normal-B5bTHO_g.woff2",
+      "assets/instrument-sans-latin-wght-normal-BbzFLZTg.woff2"
+    ]
+  }
+}
