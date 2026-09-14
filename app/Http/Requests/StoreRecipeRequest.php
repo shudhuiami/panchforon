@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ModerationStatus;
+use App\Enums\SpiceLevel;
 use App\Services\SettingsRepository;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
@@ -38,17 +39,33 @@ class StoreRecipeRequest extends FormRequest
         return [
             'status' => ['sometimes', Rule::in(['draft', 'published'])],
             'title' => ['required', 'string', 'max:255'],
+            'name_bn' => ['nullable', 'string', 'max:255'],
             'cuisine' => ['nullable', 'string', 'max:100'],
             'category' => ['nullable', 'string', 'max:100'],
             'instructions' => ['required', 'string'],
             'image_url' => ['nullable', 'url', 'max:2048'],
             'servings' => ['nullable', 'integer', 'min:1', 'max:100'],
+            /**
+             * Minutes, never a phrase, and capped at a day: past that someone
+             * is describing a marinade in the wrong field.
+             */
+            'prep_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
+            'cook_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
+            'spice_level' => ['nullable', Rule::enum(SpiceLevel::class)],
             'source_url' => ['nullable', 'url', 'max:2048'],
             'ingredients' => ['required', 'array', 'min:1'],
             'ingredients.*.raw_text' => ['required_without:ingredients.*.name', 'nullable', 'string'],
             'ingredients.*.name' => ['nullable', 'string'],
             'ingredients.*.quantity' => ['nullable', 'numeric', 'min:0'],
+            /**
+             * Deliberately not checked against the units table: imports carry
+             * whatever the source wrote ("bunch", "handful", "小さじ"), and a
+             * line whose unit does not resolve is a line that simply will not
+             * merge — not a reason to reject the whole recipe.
+             */
             'ingredients.*.unit' => ['nullable', 'string', 'max:50'],
+            'ingredients.*.is_optional' => ['nullable', 'boolean'],
+            'ingredients.*.note' => ['nullable', 'string', 'max:255'],
         ];
     }
 

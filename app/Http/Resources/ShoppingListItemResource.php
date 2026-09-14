@@ -24,6 +24,7 @@ class ShoppingListItemResource extends JsonResource
             'quantity' => $this->quantity,
             'unit' => $this->unit,
             'is_unmerged' => $this->is_unmerged,
+            'is_optional' => (bool) $this->is_optional,
             'source_note' => $this->source_note,
             'is_checked' => $this->is_checked,
             'created_at' => $this->created_at?->toISOString(),

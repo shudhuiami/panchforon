@@ -3,6 +3,9 @@ export type ModerationStatus = 'draft' | 'pending' | 'approved' | 'unpublished';
 /** Which meal of the day a planned dish belongs to. */
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
+/** How hot a dish is. Null on the many recipes with nothing to say about it. */
+export type SpiceLevel = 'mild' | 'medium' | 'hot';
+
 /** Another person, as shown on their recipes and reviews. */
 export interface User {
     id: number;
@@ -41,7 +44,14 @@ export interface AuthResponse {
 export interface Ingredient {
     id: number;
     canonical_name: string;
+    /** Bangla name, where one has been recorded. */
+    name_bn?: string | null;
+    /** Only a fallback now: the recipe row's own unit decides the dimension. */
     default_dimension: 'mass' | 'volume' | 'count' | 'none';
+    /** False for things nobody buys, such as water. These never reach a shopping list. */
+    is_shoppable: boolean;
+    /** The unit symbol this ingredient is usually written in, e.g. "g". */
+    preferred_unit?: string | null;
 }
 
 export interface RecipeIngredient {
@@ -49,6 +59,10 @@ export interface RecipeIngredient {
     ingredient_id?: number | null;
     quantity?: number | null;
     unit?: string | null;
+    /** Optional in this recipe. Optionality belongs to the row, not the ingredient. */
+    is_optional: boolean;
+    /** The cook's aside, e.g. "3 medium, halved". */
+    note?: string | null;
     raw_text: string;
     position: number;
     ingredient?: Ingredient | null;
@@ -76,11 +90,17 @@ export interface RecipeList {
     source: 'api' | 'user';
     moderation_status: ModerationStatus;
     title: string;
+    name_bn?: string | null;
     slug: string;
     cuisine?: string | null;
     category?: string | null;
     image_url?: string | null;
     servings: number;
+    prep_minutes?: number | null;
+    cook_minutes?: number | null;
+    /** prep + cook. Null only when neither time is recorded. */
+    total_minutes?: number | null;
+    spice_level?: SpiceLevel | null;
     ratings_count: number;
     ratings_avg: number | null;
     bayesian_score: number | null;
@@ -95,12 +115,18 @@ export interface RecipeDetail {
     moderation_status: ModerationStatus;
     external_id?: string | null;
     title: string;
+    name_bn?: string | null;
     slug: string;
     cuisine?: string | null;
     category?: string | null;
     instructions: string;
     image_url?: string | null;
     servings: number;
+    prep_minutes?: number | null;
+    cook_minutes?: number | null;
+    /** prep + cook. Null only when neither time is recorded. */
+    total_minutes?: number | null;
+    spice_level?: SpiceLevel | null;
     source_url?: string | null;
     ingredients: RecipeIngredient[];
     stat?: RecipeStat | null;
@@ -162,6 +188,8 @@ export interface ShoppingListItem {
     quantity?: number | null;
     unit?: string | null;
     is_unmerged: boolean;
+    /** True only when every recipe row feeding this line was itself optional. */
+    is_optional: boolean;
     source_note?: string | null;
     is_checked: boolean;
     created_at?: string;
