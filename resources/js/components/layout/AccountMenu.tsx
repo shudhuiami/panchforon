@@ -7,33 +7,34 @@ import { Sheet } from '../ui/Sheet';
 import { ButtonLink } from '../ui/Button';
 import { useSiteSettings } from '../../features/site/useSiteSettings';
 
+type MenuTone = 'primary' | 'danger';
+
 interface MenuItem {
     label: string;
     icon: LucideIcon;
     to?: string;
     href?: string;
     onSelect?: () => void;
-    tone?: 'danger';
+    tone?: MenuTone;
 }
 
 interface AccountMenuListProps {
     onNavigate: () => void;
-    /** The sheet lives where there is no header CTA, so it carries the create link. */
-    withCreateLink?: boolean;
 }
 
 /**
- * The account actions, rendered by the dropdown and the sheet alike. Meal plan
- * is deliberately absent: the desktop nav pill and the phone "Plan" tab own it.
+ * The account actions, rendered by the dropdown and the sheet alike. Posting is
+ * the only thing here that makes something, so it leads and it is tinted. Meal
+ * plan is deliberately absent: the desktop nav pill and the phone "Plan" tab own it.
  */
-const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate, withCreateLink = false }) => {
+const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
     if (!user) return null;
 
     const items: MenuItem[] = [
-        ...(withCreateLink ? [{ label: 'Post a recipe', icon: PlusCircle, to: '/recipes/create' } as MenuItem] : []),
+        { label: 'Post a recipe', icon: PlusCircle, to: '/recipes/create', tone: 'primary' },
         { label: 'Your account', icon: UserRound, to: '/account' },
         { label: 'Saved recipes', icon: Heart, to: '/saved' },
         { label: 'Shopping list', icon: ShoppingBasket, to: '/shopping-list' },
@@ -49,9 +50,14 @@ const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate, withCreat
         },
     ];
 
-    const itemClass = (tone?: 'danger') =>
-        `flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${
-            tone === 'danger' ? 'text-hot hover:bg-hot-soft' : 'text-ink hover:bg-surface-2'
+    const tones: Record<MenuTone, string> = {
+        primary: 'bg-primary-soft font-semibold text-primary hover:bg-primary hover:text-on-primary',
+        danger: 'font-medium text-hot hover:bg-hot-soft',
+    };
+
+    const itemClass = (tone?: MenuTone) =>
+        `flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${
+            tone ? tones[tone] : 'font-medium text-ink hover:bg-surface-2'
         }`;
 
     return (
@@ -148,7 +154,7 @@ export const AccountSheet: React.FC<{ isOpen: boolean; onClose: () => void }> = 
     return (
         <Sheet isOpen={isOpen} onClose={onClose} label="Account">
             {user ? (
-                <AccountMenuList onNavigate={onClose} withCreateLink />
+                <AccountMenuList onNavigate={onClose} />
             ) : (
                 <div className="space-y-3 p-6">
                     <p className="font-display text-2xl font-semibold text-ink">Your kitchen, saved.</p>

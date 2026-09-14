@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteSettings } from '../../features/site/useSiteSettings';
 import { useMealPlanCount } from '../../features/meal-plan/useMealPlan';
@@ -89,12 +89,7 @@ export const Header: React.FC = () => {
 
                     <div className="hidden items-center gap-2 lg:flex">
                         {user ? (
-                            <>
-                                <ButtonLink to="/recipes/create" size="sm">
-                                    <Plus className="size-4" aria-hidden="true" /> Post a recipe
-                                </ButtonLink>
-                                <AccountDropdown />
-                            </>
+                            <AccountDropdown />
                         ) : (
                             <>
                                 <ButtonLink to="/login" variant="ghost" size="sm">
