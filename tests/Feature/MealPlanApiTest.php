@@ -7,6 +7,7 @@ use App\Models\Recipe;
 use App\Models\RecipeIngredient;
 use App\Models\ShoppingListItem;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -19,6 +20,19 @@ test('authenticated user can view active meal plan', function () {
     $res->assertStatus(200)
         ->assertJsonPath('data.name', 'This week')
         ->assertJsonPath('data.is_active', true);
+});
+
+test('a cook who has never planned gets a week starting today', function () {
+    $user = User::factory()->create();
+    $today = CarbonImmutable::today();
+
+    $this->actingAs($user)->getJson('/api/meal-plan')
+        ->assertStatus(200)
+        ->assertJsonPath('data.starts_on', $today->toDateString())
+        ->assertJsonPath('data.ends_on', $today->addDays(6)->toDateString())
+        ->assertJsonPath('data.day_count', 7)
+        ->assertJsonPath('data.items_count', 0)
+        ->assertJsonPath('data.shopping_items_count', 0);
 });
 
 test('authenticated user can add recipe and adjust servings', function () {
@@ -34,6 +48,10 @@ test('authenticated user can add recipe and adjust servings', function () {
     $addRes->assertStatus(200)
         ->assertJsonCount(1, 'data.items');
 
+    // A client that knows nothing about the calendar still gets a dated dish.
+    $addRes->assertJsonPath('data.items.0.planned_for', CarbonImmutable::today()->toDateString())
+        ->assertJsonPath('data.items.0.meal_slot', 'dinner');
+
     $plan = MealPlan::where('user_id', $user->id)->first();
     $item = $plan->items()->first();
 
@@ -43,7 +61,8 @@ test('authenticated user can add recipe and adjust servings', function () {
     ]);
 
     $updateRes->assertStatus(200)
-        ->assertJsonPath('data.servings', 8);
+        ->assertJsonPath('data.servings', 8)
+        ->assertJsonPath('data.planned_for', CarbonImmutable::today()->toDateString());
 });
 
 test('authenticated user can remove recipe from meal plan', function () {

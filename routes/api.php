@@ -75,6 +75,15 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(func
     Route::post('/recipes/{id}/save', [RecipeSaveController::class, 'store'])->whereNumber('id');
     Route::delete('/recipes/{id}/save', [RecipeSaveController::class, 'destroy'])->whereNumber('id');
 
+    // Plans: the dated meal plans a cook has built, current and past
+    Route::get('/meal-plans', [MealPlanController::class, 'index']);
+    Route::post('/meal-plans', [MealPlanController::class, 'store']);
+    Route::get('/meal-plans/{id}', [MealPlanController::class, 'showPlan'])->whereNumber('id');
+    Route::patch('/meal-plans/{id}', [MealPlanController::class, 'updatePlan'])->whereNumber('id');
+    Route::delete('/meal-plans/{id}', [MealPlanController::class, 'destroyPlan'])->whereNumber('id');
+    Route::post('/meal-plans/{id}/activate', [MealPlanController::class, 'activate'])->whereNumber('id');
+    Route::get('/meal-plans/{id}/shopping-list', [MealPlanController::class, 'planShoppingList'])->whereNumber('id');
+
     // Meal Plan
     Route::get('/meal-plan', [MealPlanController::class, 'show']);
     Route::post('/meal-plan/items', [MealPlanController::class, 'addItem']);

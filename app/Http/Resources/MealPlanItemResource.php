@@ -21,6 +21,8 @@ class MealPlanItemResource extends JsonResource
             'meal_plan_id' => $this->meal_plan_id,
             'recipe_id' => $this->recipe_id,
             'servings' => $this->servings,
+            'planned_for' => $this->planned_for?->toDateString(),
+            'meal_slot' => $this->meal_slot->value,
             'recipe' => new RecipeListResource($this->whenLoaded('recipe')),
             'created_at' => $this->created_at?->toISOString(),
         ];
