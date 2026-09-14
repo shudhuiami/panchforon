@@ -32,10 +32,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
     const queryClient = useQueryClient();
     const [justAdded, setJustAdded] = useState(false);
 
+    /** One tap, no questions: the API drops it on the plan's first day, dinner. */
     const addMutation = useMutation({
-        mutationFn: () => mealPlanApi.addItem(recipe.id, recipe.servings || 4),
+        mutationFn: () => mealPlanApi.addItem({ recipe_id: recipe.id, servings: recipe.servings || 4 }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mealPlan'] });
+            queryClient.invalidateQueries({ queryKey: ['plans'] });
             setJustAdded(true);
             setTimeout(() => setJustAdded(false), 2000);
         },

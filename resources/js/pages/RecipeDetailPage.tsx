@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, Check, Edit3, ExternalLink, Globe, ListChecks, MessageSquare, Plus, Quote, SearchX, Sparkles, Star, Trash2, Users, Utensils, type LucideIcon } from 'lucide-react';
 import { recipesApi } from '../api/recipes';
 import { mealPlanApi } from '../api/mealPlan';
+import { MealSlot } from '../types/api';
 import { useAuth } from '../context/AuthContext';
+import { useMealPlan } from '../features/meal-plan/useMealPlan';
+import { PlanSelect, UNDATED } from '../features/meal-plan/PlanSelect';
+import { MEAL_SLOTS, SLOT_META, slotLabel } from '../features/meal-plan/slots';
+import { clampIso, dayOptionLabel, formatRange, listRange, todayIso } from '../features/meal-plan/dates';
 import { Button, ButtonLink } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { QuantityStepper } from '../components/ui/QuantityStepper';
@@ -67,6 +72,8 @@ export const RecipeDetailPage: React.FC = () => {
 
     const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
     const [selectedServings, setSelectedServings] = useState(4);
+    const [selectedDay, setSelectedDay] = useState<string>('');
+    const [selectedSlot, setSelectedSlot] = useState<MealSlot>('dinner');
     const [justAddedToPlan, setJustAddedToPlan] = useState(false);
 
     const { data, isLoading, error } = useQuery({
@@ -80,10 +87,30 @@ export const RecipeDetailPage: React.FC = () => {
         if (recipe?.servings) setSelectedServings(recipe.servings);
     }, [recipe?.servings]);
 
+    /** The active plan gives this page the days it is allowed to offer. */
+    const { data: planData } = useMealPlan(!!token);
+    const plan = planData?.data;
+    const planDays = useMemo(() => (plan ? listRange(plan.starts_on, plan.ends_on) : []), [plan]);
+
+    const planStart = plan?.starts_on;
+    const planEnd = plan?.ends_on;
+
+    useEffect(() => {
+        if (!planStart || !planEnd) return;
+        setSelectedDay(clampIso(todayIso(), planStart, planEnd));
+    }, [planStart, planEnd]);
+
     const addToPlanMutation = useMutation({
-        mutationFn: () => mealPlanApi.addItem(recipe!.id, selectedServings),
+        mutationFn: () =>
+            mealPlanApi.addItem({
+                recipe_id: recipe!.id,
+                servings: selectedServings,
+                planned_for: selectedDay === UNDATED ? null : selectedDay || undefined,
+                meal_slot: selectedSlot,
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['mealPlan'] });
+            queryClient.invalidateQueries({ queryKey: ['plans'] });
             setJustAddedToPlan(true);
             setTimeout(() => setJustAddedToPlan(false), 2000);
         },
@@ -257,6 +284,30 @@ export const RecipeDetailPage: React.FC = () => {
                                 <span className="text-sm text-ink-2">Servings</span>
                                 <QuantityStepper value={selectedServings} onChange={setSelectedServings} min={1} max={50} size="md" ariaLabel="Servings" />
                             </div>
+                            {planDays.length > 0 && (
+                                <div className="mt-3 grid grid-cols-2 gap-2">
+                                    <PlanSelect label="Day to cook it" value={selectedDay} icon={CalendarPlus} onChange={setSelectedDay}>
+                                        <option value={UNDATED}>Not dated</option>
+                                        {planDays.map((day) => (
+                                            <option key={day} value={day}>
+                                                {dayOptionLabel(day)}
+                                            </option>
+                                        ))}
+                                    </PlanSelect>
+                                    <PlanSelect
+                                        label="Meal slot"
+                                        value={selectedSlot}
+                                        icon={SLOT_META[selectedSlot].icon}
+                                        onChange={(value) => setSelectedSlot(value as MealSlot)}
+                                    >
+                                        {MEAL_SLOTS.map((option) => (
+                                            <option key={option} value={option}>
+                                                {slotLabel(option)}
+                                            </option>
+                                        ))}
+                                    </PlanSelect>
+                                </div>
+                            )}
                             <Button
                                 onClick={() => {
                                     if (!requireSignIn()) addToPlanMutation.mutate();
@@ -269,6 +320,15 @@ export const RecipeDetailPage: React.FC = () => {
                                 {justAddedToPlan ? 'Added to your plan' : 'Add to meal plan'}
                             </Button>
                             {addToPlanMutation.isError && <p className="mt-2 text-xs text-hot">Couldn’t add this dish right now. Please try again.</p>}
+                            {plan && (
+                                <p className="mt-2 text-center text-[11px] text-ink-3">
+                                    Into{' '}
+                                    <Link to="/meal-plan" className="font-semibold text-ink-2 hover:text-primary">
+                                        {plan.name}
+                                    </Link>{' '}
+                                    · {formatRange(plan.starts_on, plan.ends_on)}
+                                </p>
+                            )}
                             <div className="mt-3 grid grid-cols-2 gap-2">
                                 <SaveButton recipeId={recipe.id} recipeTitle={recipe.title} variant="inline" className="w-full justify-center" />
                                 <ShareButton title={recipe.title} text={`${recipe.title} on Panchforon`} />

@@ -12,6 +12,8 @@ import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { CreateRecipePage } from './pages/CreateRecipePage';
 import { EditRecipePage } from './pages/EditRecipePage';
 import { MealPlanPage } from './pages/MealPlanPage';
+import { PlanHistoryPage } from './pages/PlanHistoryPage';
+import { PlanDetailPage } from './pages/PlanDetailPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { AccountPage } from './pages/AccountPage';
 import { MyRecipesPage } from './pages/MyRecipesPage';
@@ -57,6 +59,8 @@ export const RootApp: React.FC = () => (
                                     <Route path="/account/recipes" element={<MyRecipesPage />} />
                                     <Route path="/account/ratings" element={<MyRatingsPage />} />
                                     <Route path="/meal-plan" element={<MealPlanPage />} />
+                                    <Route path="/plans" element={<PlanHistoryPage />} />
+                                    <Route path="/plans/:id" element={<PlanDetailPage />} />
                                     <Route path="/shopping-list" element={<ShoppingListPage />} />
                                 </Route>
                                 <Route path="*" element={<NotFoundPage />} />
