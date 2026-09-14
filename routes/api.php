@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(func
     Route::post('/recipes', [RecipeController::class, 'store']);
     Route::put('/recipes/{id}', [RecipeController::class, 'update'])->whereNumber('id');
     Route::delete('/recipes/{id}', [RecipeController::class, 'destroy'])->whereNumber('id');
+    Route::post('/recipes/{id}/publish', [RecipeController::class, 'publish'])->whereNumber('id');
 
     // Reporting a recipe
     Route::post('/recipes/{id}/flag', [ContentFlagController::class, 'store'])->whereNumber('id');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ModerationStatus;
 use App\Models\Rating;
 use App\Models\Recipe;
 use App\Models\User;
@@ -103,6 +104,32 @@ test('my recipes includes the ones still awaiting moderation', function () {
     $json = $this->getJson('/api/my/recipes')->assertOk()->json('data');
 
     expect(collect($json)->pluck('id')->all())->toEqualCanonicalizing([$approved->id, $pending->id]);
+});
+
+test('my recipes can be narrowed to one shelf', function () {
+    $user = User::factory()->create();
+    $draft = Recipe::factory()->create(['user_id' => $user->id, 'moderation_status' => ModerationStatus::Draft]);
+    $pending = Recipe::factory()->awaitingModeration()->create(['user_id' => $user->id]);
+    $approved = Recipe::factory()->create(['user_id' => $user->id]);
+    Sanctum::actingAs($user);
+
+    $ids = fn (?string $status) => collect($this->getJson('/api/my/recipes'.($status ? "?status={$status}" : ''))->assertOk()->json('data'))
+        ->pluck('id')
+        ->all();
+
+    expect($ids('draft'))->toBe([$draft->id])
+        ->and($ids('pending'))->toBe([$pending->id])
+        ->and($ids('approved'))->toBe([$approved->id])
+        ->and($ids(null))->toEqualCanonicalizing([$draft->id, $pending->id, $approved->id])
+        ->and($ids('nonsense'))->toEqualCanonicalizing([$draft->id, $pending->id, $approved->id]);
+});
+
+test('the status filter never reaches into another cook drafts', function () {
+    $user = User::factory()->create();
+    Recipe::factory()->create(['moderation_status' => ModerationStatus::Draft]);
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/my/recipes?status=draft')->assertOk()->assertJsonCount(0, 'data');
 });
 
 test('my ratings returns each score with its dish', function () {

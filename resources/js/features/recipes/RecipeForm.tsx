@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, BookOpen, Carrot, ChefHat, ImageIcon, Lightbulb, Link2, Plus, Save, Users, X, type LucideIcon } from 'lucide-react';
+import { AlertCircle, BookOpen, Carrot, ChefHat, ImageIcon, Lightbulb, Link2, Plus, Save, Send, Users, X, type LucideIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
@@ -36,11 +36,16 @@ export const toRecipePayload = (data: RecipeFormData) => ({
         })),
 });
 
+/** Which of the two save buttons was pressed. */
+export type SaveIntent = 'draft' | 'publish';
+
 interface RecipeFormProps {
     initialData?: RecipeDetail;
-    onSubmit: (data: RecipeFormData) => Promise<void>;
+    onSubmit: (data: RecipeFormData, intent: SaveIntent) => Promise<void>;
     isSubmitting: boolean;
     onCancel: () => void;
+    /** False while the admin has submissions paused: drafts only, no publishing. */
+    canPublish?: boolean;
 }
 
 const COMMON_UNITS = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece', 'clove', 'bunch', 'pinch', 'slice', 'can'];
@@ -77,7 +82,7 @@ const Section: React.FC<{ icon: LucideIcon; tone: string; title: string; subtitl
     </section>
 );
 
-export const RecipeForm: React.FC<RecipeFormProps> = ({ initialData, onSubmit, isSubmitting, onCancel }) => {
+export const RecipeForm: React.FC<RecipeFormProps> = ({ initialData, onSubmit, isSubmitting, onCancel, canPublish = true }) => {
     const [formData, setFormData] = useState<RecipeFormData>(() =>
         initialData
             ? {
@@ -110,6 +115,7 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({ initialData, onSubmit, i
     );
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [brokenPreviewUrl, setBrokenPreviewUrl] = useState<string | null>(null);
+    const [pendingIntent, setPendingIntent] = useState<SaveIntent | null>(null);
 
     const patch = (changes: Partial<RecipeFormData>) => setFormData((prev) => ({ ...prev, ...changes }));
 
@@ -138,11 +144,34 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({ initialData, onSubmit, i
     const previewUrl = formData.image_url.trim();
     const previewBroken = previewUrl !== '' && brokenPreviewUrl === previewUrl;
 
+    /**
+     * A recipe can be kept private while it is new or still a draft. Once it
+     * has been submitted there is only one save, so editing it can never quietly
+     * take it off the site.
+     */
+    const keepsDraft = !initialData || initialData.moderation_status === 'draft';
+    const offersBoth = keepsDraft && canPublish;
+    const primaryIntent: SaveIntent = keepsDraft && !canPublish ? 'draft' : 'publish';
+    const primaryLabel = !keepsDraft ? 'Save changes' : primaryIntent === 'draft' ? 'Save draft' : 'Publish';
+    const PrimaryIcon = primaryIntent === 'publish' && keepsDraft ? Send : Save;
+
+    const save = async (intent: SaveIntent) => {
+        if (!validate()) return;
+        setPendingIntent(intent);
+        try {
+            await onSubmit(formData, intent);
+        } catch {
+            // The page reports the failure; the form only has to stop waiting.
+        } finally {
+            setPendingIntent(null);
+        }
+    };
+
     return (
         <form
-            onSubmit={async (e) => {
+            onSubmit={(e) => {
                 e.preventDefault();
-                if (validate()) await onSubmit(formData);
+                void save(primaryIntent);
             }}
             className="relative pb-6"
         >
@@ -339,15 +368,33 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({ initialData, onSubmit, i
             </div>
 
             <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 mt-8 flex justify-center lg:bottom-4">
-                <div className="glass flex w-full max-w-2xl items-center justify-between gap-3 rounded-full py-2 pr-2 pl-5 shadow-xl">
+                <div className="glass flex w-full max-w-2xl items-center justify-between gap-3 rounded-full py-2 pr-2 pl-3 shadow-xl sm:pl-5">
                     <span className="hidden min-w-0 truncate text-sm text-ink-2 sm:block">{formData.title.trim() || (initialData ? 'Editing recipe' : 'New recipe')}</span>
                     <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-                        <Button type="button" variant="ghost" onClick={onCancel}>
+                        <Button type="button" variant="ghost" size="sm" className="sm:h-11 sm:px-5" onClick={onCancel} disabled={isSubmitting}>
                             Cancel
                         </Button>
-                        <Button type="submit" size="lg" isLoading={isSubmitting}>
-                            <Save className="size-4" aria-hidden="true" />
-                            {initialData ? 'Save changes' : 'Publish recipe'}
+                        {offersBoth && (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => void save('draft')}
+                                isLoading={isSubmitting && pendingIntent === 'draft'}
+                                disabled={isSubmitting}
+                            >
+                                <Save className="size-4" aria-hidden="true" />
+                                <span className="sm:hidden">Draft</span>
+                                <span className="hidden sm:inline">Save draft</span>
+                            </Button>
+                        )}
+                        <Button
+                            type="submit"
+                            className="sm:h-13 sm:px-7 sm:text-base"
+                            isLoading={isSubmitting && pendingIntent === primaryIntent}
+                            disabled={isSubmitting}
+                        >
+                            <PrimaryIcon className="size-4" aria-hidden="true" />
+                            {primaryLabel}
                         </Button>
                     </div>
                 </div>

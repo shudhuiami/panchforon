@@ -1,6 +1,13 @@
 import { request } from './client';
 import { CategoryCount, CuisineCount, PaginatedResponse, RecipeDetail, RecipeList } from '../types/api';
 
+/**
+ * What a save should do with the recipe: keep it private to its author, or
+ * send it to a moderator. Left off, the API publishes, which is what every
+ * recipe posted before drafts existed did.
+ */
+export type RecipeSaveStatus = 'draft' | 'published';
+
 export interface RecipeQueryParams {
     cuisine?: string;
     category?: string;
@@ -28,6 +35,7 @@ export const recipesApi = {
         request<{ data: RecipeDetail }>(`/recipes/${slug}`),
 
     create: (data: {
+        status?: RecipeSaveStatus;
         title: string;
         cuisine?: string;
         category?: string;
@@ -48,6 +56,7 @@ export const recipesApi = {
         }),
 
     update: (id: number, data: {
+        status?: RecipeSaveStatus;
         title?: string;
         cuisine?: string;
         category?: string;
@@ -65,6 +74,12 @@ export const recipesApi = {
         request<{ data: RecipeDetail }>(`/recipes/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
+        }),
+
+    /** Send a draft to the moderators without editing it first. */
+    publish: (id: number): Promise<{ data: RecipeDetail }> =>
+        request<{ data: RecipeDetail }>(`/recipes/${id}/publish`, {
+            method: 'POST',
         }),
 
     delete: (id: number): Promise<{ message: string }> =>

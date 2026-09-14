@@ -1,4 +1,4 @@
-export type ModerationStatus = 'pending' | 'approved' | 'unpublished';
+export type ModerationStatus = 'draft' | 'pending' | 'approved' | 'unpublished';
 
 /** Another person, as shown on their recipes and reviews. */
 export interface User {
