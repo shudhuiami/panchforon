@@ -2,11 +2,88 @@
 
 use App\DTOs\ParsedIngredient;
 use App\DTOs\RecipePlanItemInput;
+use App\DTOs\ShoppingListLine;
 use App\Enums\UnitDimension;
 use App\Services\MergeEngine;
+use App\Support\UnitDefinition;
+use App\Support\UnitRegistry;
+
+/**
+ * The units as the table holds them, written out here so the engine can be
+ * exercised without a database.
+ */
+function mergeEngineUnits(): UnitRegistry
+{
+    $rows = [
+        ['g', 'gram', UnitDimension::Mass, 1.0],
+        ['kg', 'kilogram', UnitDimension::Mass, 1000.0],
+        ['oz', 'ounce', UnitDimension::Mass, 28.3495],
+        ['lb', 'pound', UnitDimension::Mass, 453.592],
+        ['ml', 'millilitre', UnitDimension::Volume, 1.0],
+        ['l', 'litre', UnitDimension::Volume, 1000.0],
+        ['tsp', 'teaspoon', UnitDimension::Volume, 4.92892],
+        ['tbsp', 'tablespoon', UnitDimension::Volume, 14.7868],
+        ['cup', 'cup', UnitDimension::Volume, 236.588],
+        ['floz', 'fluid ounce', UnitDimension::Volume, 29.5735],
+        ['piece', 'piece', UnitDimension::Count, 1.0],
+        ['clove', 'clove', UnitDimension::Count, 1.0],
+        ['slice', 'slice', UnitDimension::Count, 1.0],
+        ['whole', 'whole', UnitDimension::Count, 1.0],
+    ];
+
+    return UnitRegistry::fromDefinitions(array_map(
+        fn (array $row): UnitDefinition => new UnitDefinition($row[0], $row[1], $row[2], $row[3]),
+        $rows,
+    ));
+}
+
+/**
+ * A recipe row as the controller hands it over: the unit is the row's own, and
+ * $ingredientDimension is the ingredient record's default, which is consulted
+ * only when the unit cannot answer.
+ */
+function mergeEngineRow(
+    int $ingredientId,
+    string $name,
+    ?float $quantity,
+    ?string $unit,
+    ?UnitDimension $ingredientDimension = null,
+    bool $isOptional = false,
+    float $multiplier = 1.0,
+    ?string $recipeTitle = null,
+): RecipePlanItemInput {
+    return new RecipePlanItemInput(
+        ingredient: new ParsedIngredient(
+            quantity: $quantity,
+            unit: $unit,
+            name: $name,
+            rawText: trim(($quantity ?? '').' '.($unit ?? '').' '.$name),
+            ingredientId: $ingredientId,
+            dimension: $ingredientDimension,
+            isOptional: $isOptional,
+        ),
+        servingsMultiplier: $multiplier,
+        recipeTitle: $recipeTitle,
+    );
+}
+
+/**
+ * @param  array<int, ShoppingListLine>  $lines
+ * @return array<string, ShoppingListLine>
+ */
+function mergeEngineLinesByUnit(array $lines): array
+{
+    $keyed = [];
+
+    foreach ($lines as $line) {
+        $keyed[$line->unit ?? ''] = $line;
+    }
+
+    return $keyed;
+}
 
 beforeEach(function () {
-    $this->engine = new MergeEngine;
+    $this->engine = new MergeEngine(mergeEngineUnits());
 });
 
 // Case 1: Two recipes, same ingredient, same unit -> one merged line
@@ -316,4 +393,117 @@ test('case 10: single recipe preserves quantities exactly without merging notes'
         ->and($merged[0]->quantity)->toBe(250.0)
         ->and($merged[0]->unit)->toBe('g')
         ->and($merged[0]->sourceNote)->toBeNull();
+});
+
+// The rule the whole model turns on: the row's unit says what is being measured.
+
+test('potato by weight and potato by the piece stay two lines and never add up', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 40, name: 'potato', quantity: 400.0, unit: 'g', ingredientDimension: UnitDimension::Mass, recipeTitle: 'Recipe A'),
+        mergeEngineRow(ingredientId: 40, name: 'potato', quantity: 3.0, unit: 'piece', ingredientDimension: UnitDimension::Mass, recipeTitle: 'Recipe B'),
+    ]);
+
+    $byUnit = mergeEngineLinesByUnit($merged);
+
+    expect($merged)->toHaveCount(2)
+        ->and(array_keys($byUnit))->toEqualCanonicalizing(['g', 'piece'])
+        ->and($byUnit['g']->quantity)->toBe(400.0)
+        ->and($byUnit['piece']->quantity)->toBe(3.0)
+        ->and(array_map(fn ($line) => $line->quantity, $merged))->not->toContain(403.0);
+});
+
+test('two recipes weighing the same onion add up to one line', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 41, name: 'onion', quantity: 200.0, unit: 'g', ingredientDimension: UnitDimension::Count, recipeTitle: 'Recipe A'),
+        mergeEngineRow(ingredientId: 41, name: 'onion', quantity: 300.0, unit: 'g', ingredientDimension: UnitDimension::Count, recipeTitle: 'Recipe B'),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->displayName)->toBe('onion')
+        ->and($merged[0]->quantity)->toBe(500.0)
+        ->and($merged[0]->unit)->toBe('g');
+});
+
+test('a spoonful of a thing usually weighed is still a spoonful, not grams', function () {
+    // 2 tbsp of ginger paste, of an ingredient whose default dimension is mass.
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 42, name: 'ginger', quantity: 2.0, unit: 'tbsp', ingredientDimension: UnitDimension::Mass, recipeTitle: 'Chicken Roast'),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->unit)->toBe('ml')
+        ->and($merged[0]->quantity)->toBe(29.6);
+});
+
+test('spoons of the same thing across two recipes add up in volume', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 43, name: 'ginger', quantity: 2.0, unit: 'tbsp', ingredientDimension: UnitDimension::Mass),
+        mergeEngineRow(ingredientId: 43, name: 'ginger', quantity: 3.0, unit: 'tsp', ingredientDimension: UnitDimension::Mass),
+    ]);
+
+    // 2 * 14.7868 + 3 * 4.92892 = 44.3605...
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->unit)->toBe('ml')
+        ->and($merged[0]->quantity)->toBe(44.4)
+        ->and($merged[0]->sourceNote)->toBe('from 2 recipes');
+});
+
+test('a line is optional only when every recipe behind it said so', function () {
+    $allOptional = $this->engine->merge([
+        mergeEngineRow(ingredientId: 44, name: 'yogurt', quantity: 100.0, unit: 'g', isOptional: true),
+        mergeEngineRow(ingredientId: 44, name: 'yogurt', quantity: 50.0, unit: 'g', isOptional: true),
+    ]);
+
+    $mixed = $this->engine->merge([
+        mergeEngineRow(ingredientId: 45, name: 'yogurt', quantity: 100.0, unit: 'g', isOptional: true),
+        mergeEngineRow(ingredientId: 45, name: 'yogurt', quantity: 50.0, unit: 'g', isOptional: false),
+    ]);
+
+    expect($allOptional)->toHaveCount(1)
+        ->and($allOptional[0]->isOptional)->toBeTrue()
+        ->and($mixed)->toHaveCount(1)
+        ->and($mixed[0]->isOptional)->toBeFalse()
+        ->and($mixed[0]->quantity)->toBe(150.0);
+});
+
+test('an optional line that cannot be merged keeps its flag', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 46, name: 'coriander', quantity: null, unit: null, isOptional: true, recipeTitle: 'Curry'),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->isUnmerged)->toBeTrue()
+        ->and($merged[0]->isOptional)->toBeTrue();
+});
+
+test('a unit nobody has taught us falls back to what the ingredient usually is', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 47, name: 'coriander', quantity: 2.0, unit: 'bunch', ingredientDimension: UnitDimension::Count),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->isUnmerged)->toBeFalse()
+        ->and($merged[0]->quantity)->toBe(2.0)
+        ->and($merged[0]->unit)->toBe('bunch');
+});
+
+test('a line with no unit falls back to the ingredient dimension', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 48, name: 'chicken', quantity: 800.0, unit: null, ingredientDimension: UnitDimension::Mass),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->quantity)->toBe(800.0)
+        ->and($merged[0]->unit)->toBe('g');
+});
+
+test('an unknown unit with nothing to fall back on is left unmerged rather than guessed at', function () {
+    $merged = $this->engine->merge([
+        mergeEngineRow(ingredientId: 49, name: 'saffron', quantity: 1.0, unit: 'pinch', ingredientDimension: null, recipeTitle: 'Polao'),
+    ]);
+
+    expect($merged)->toHaveCount(1)
+        ->and($merged[0]->isUnmerged)->toBeTrue()
+        ->and($merged[0]->quantity)->toBeNull()
+        ->and($merged[0]->sourceNote)->toBe('from Polao');
 });

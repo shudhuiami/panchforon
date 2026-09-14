@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Unit;
 use App\Services\SettingsRepository;
+use App\Support\UnitRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -22,6 +24,17 @@ class AppServiceProvider extends ServiceProvider
          * every other caller is holding.
          */
         $this->app->singleton(SettingsRepository::class);
+
+        /**
+         * The units table is what a unit means, for everything downstream of a
+         * recipe line. It is read on nearly every shopping list and written to
+         * almost never, so it is cached and handed round as one object; the
+         * Unit model drops that cache whenever a row changes.
+         */
+        $this->app->singleton(
+            UnitRegistry::class,
+            fn (): UnitRegistry => UnitRegistry::fromDefinitions(Unit::cachedDefinitions()),
+        );
     }
 
     /**

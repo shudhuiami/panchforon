@@ -22,6 +22,7 @@ class ShoppingListItem extends Model
         'quantity',
         'unit',
         'is_unmerged',
+        'is_optional',
         'source_note',
         'is_checked',
     ];
@@ -34,6 +35,7 @@ class ShoppingListItem extends Model
         return [
             'quantity' => 'float',
             'is_unmerged' => 'boolean',
+            'is_optional' => 'boolean',
             'is_checked' => 'boolean',
         ];
     }
