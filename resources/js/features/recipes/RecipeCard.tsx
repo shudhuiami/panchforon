@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, Plus, Sparkles, Users } from 'lucide-react';
+import { Check, Loader2, Plus, Sparkles, Timer, Users } from 'lucide-react';
 import { RecipeList } from '../../types/api';
 import { mealPlanApi } from '../../api/mealPlan';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,38 @@ import { Photo } from '../../components/ui/Photo';
 import { SaveButton } from '../saves/SaveButton';
 
 export const FALLBACK_GRADIENTS = ['bg-spice-gradient', 'bg-plum-gradient', 'bg-mint-gradient', 'bg-sunrise-gradient', 'bg-ink-gradient'];
+
+/* ---------------------------------------------------------------------------
+   Shared recipe vocabulary. The card, the detail page and the recipe form all
+   need to say the same things about a dish's timing and its heat, so the
+   wording and the tones live here rather than being spelled out three times.
+   --------------------------------------------------------------------------- */
+
+export const SPICE_LEVELS = ['mild', 'medium', 'hot'] as const;
+
+export type SpiceLevelValue = (typeof SPICE_LEVELS)[number];
+
+/** Label plus the tokens each level is drawn in: cool for mild, hot for hot. */
+export const SPICE_META: Record<SpiceLevelValue, { label: string; tone: string; chip: string }> = {
+    mild: { label: 'Mild', tone: 'text-mint', chip: 'border-mint/30 bg-mint-soft text-mint' },
+    medium: { label: 'Medium', tone: 'text-turmeric', chip: 'border-turmeric/30 bg-turmeric-soft text-turmeric' },
+    hot: { label: 'Hot', tone: 'text-hot', chip: 'border-hot/30 bg-hot-soft text-hot' },
+};
+
+/** Accepts whatever the API sent, so an unknown level simply shows nothing. */
+export const spiceMetaFor = (level: string | null | undefined): (typeof SPICE_META)[SpiceLevelValue] | null =>
+    level && Object.hasOwn(SPICE_META, level) ? SPICE_META[level as SpiceLevelValue] : null;
+
+/** Minutes the way a cook says them: “45 min”, “1 hr”, “1 hr 5 min”. */
+export const formatMinutes = (minutes: number | null | undefined): string | null => {
+    if (minutes === null || minutes === undefined) return null;
+    const total = Math.round(Number(minutes));
+    if (!Number.isFinite(total) || total <= 0) return null;
+    const hours = Math.floor(total / 60);
+    const rest = total % 60;
+    if (hours === 0) return `${rest} min`;
+    return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+};
 
 /** Colourful stand-in for a missing photo: a gradient, the dot pattern and the dish's initial. */
 export const RecipeFallback: React.FC<{ recipe: Pick<RecipeList, 'id' | 'title'>; className?: string }> = ({ recipe, className = '' }) => (
@@ -42,6 +74,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
             setTimeout(() => setJustAdded(false), 2000);
         },
     });
+
+    /** The one number worth carrying on a card: how long from start to plate. */
+    const totalTime = formatMinutes(recipe.total_minutes);
 
     const handleAddToPlan = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -94,7 +129,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
                 </div>
             </Link>
 
-            <div className="relative flex items-center justify-between gap-3 px-4 pt-3.5 pr-16 pb-4 sm:px-5 sm:pr-[4.5rem]">
+            <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 pt-3.5 pr-16 pb-4 sm:px-5 sm:pr-[4.5rem]">
                 <button
                     type="button"
                     onClick={handleAddToPlan}
@@ -115,9 +150,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
                 </button>
 
                 <StarRating score={recipe.ratings_avg} count={recipe.ratings_count} size="sm" />
-                <span className="hidden items-center gap-1 text-xs text-ink-3 sm:inline-flex">
-                    <Users className="size-3.5" aria-hidden="true" />
-                    {recipe.servings}
+                <span className="flex items-center gap-3 text-xs text-ink-3">
+                    {totalTime && (
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                            <Timer className="size-3.5 shrink-0" aria-hidden="true" />
+                            <span className="sr-only">Total time </span>
+                            {totalTime}
+                        </span>
+                    )}
+                    <span className="hidden items-center gap-1 sm:inline-flex">
+                        <Users className="size-3.5" aria-hidden="true" />
+                        {recipe.servings}
+                    </span>
                 </span>
             </div>
         </article>

@@ -55,6 +55,20 @@ class RecipeResource extends Resource
         return parent::getEloquentQuery()->with(['user', 'stat']);
     }
 
+    /**
+     * Prep plus cook, which is the number a cook actually plans around. Null
+     * when neither has been filled in — zero would claim the dish is instant.
+     * The public API exposes the same sum as total_minutes.
+     */
+    public static function totalMinutes(Recipe $recipe): ?int
+    {
+        if ($recipe->prep_minutes === null && $recipe->cook_minutes === null) {
+            return null;
+        }
+
+        return (int) $recipe->prep_minutes + (int) $recipe->cook_minutes;
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $pending = Recipe::query()->awaitingModeration()->count();

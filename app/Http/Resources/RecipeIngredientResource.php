@@ -21,6 +21,8 @@ class RecipeIngredientResource extends JsonResource
             'ingredient_id' => $this->ingredient_id,
             'quantity' => $this->quantity,
             'unit' => $this->unit,
+            'is_optional' => (bool) $this->is_optional,
+            'note' => $this->note,
             'raw_text' => $this->raw_text,
             'position' => $this->position,
             'ingredient' => new IngredientResource($this->whenLoaded('ingredient')),

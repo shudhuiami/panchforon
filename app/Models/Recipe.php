@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Enums\SpiceLevel;
 use App\Services\HomeFeed;
 use Database\Factories\RecipeFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property RecipeSource $source
  * @property ModerationStatus $moderation_status
+ * @property ?string $name_bn
+ * @property ?int $prep_minutes
+ * @property ?int $cook_minutes
+ * @property ?SpiceLevel $spice_level
  */
 class Recipe extends Model
 {
@@ -34,12 +39,16 @@ class Recipe extends Model
         'moderated_by',
         'external_id',
         'title',
+        'name_bn',
         'slug',
         'cuisine',
         'category',
         'instructions',
         'image_url',
         'servings',
+        'prep_minutes',
+        'cook_minutes',
+        'spice_level',
         'source_url',
     ];
 
@@ -53,6 +62,9 @@ class Recipe extends Model
             'moderation_status' => ModerationStatus::class,
             'moderated_at' => 'datetime',
             'servings' => 'integer',
+            'prep_minutes' => 'integer',
+            'cook_minutes' => 'integer',
+            'spice_level' => SpiceLevel::class,
         ];
     }
 

@@ -1,7 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarPlus, Check, Edit3, ExternalLink, Globe, ListChecks, MessageSquare, Plus, Quote, SearchX, Sparkles, Star, Trash2, Users, Utensils, type LucideIcon } from 'lucide-react';
+import {
+    CalendarPlus,
+    Check,
+    CookingPot,
+    Edit3,
+    ExternalLink,
+    Flame,
+    Globe,
+    ListChecks,
+    MessageSquare,
+    Plus,
+    Quote,
+    SearchX,
+    Sparkles,
+    Star,
+    Timer,
+    Trash2,
+    Users,
+    Utensils,
+    type LucideIcon,
+} from 'lucide-react';
 import { recipesApi } from '../api/recipes';
 import { mealPlanApi } from '../api/mealPlan';
 import { MealSlot } from '../types/api';
@@ -18,7 +38,8 @@ import { Avatar } from '../components/ui/Avatar';
 import { Photo } from '../components/ui/Photo';
 import { StatusPanel } from '../components/common/StatusPanel';
 import { Reveal } from '../components/motion/Reveal';
-import { RecipeFallback } from '../features/recipes/RecipeCard';
+import { Badge } from '../components/ui/Badge';
+import { formatMinutes, RecipeFallback, spiceMetaFor } from '../features/recipes/RecipeCard';
 import { RatingReviewModal } from '../features/ratings/RatingReviewModal';
 import { SaveButton } from '../features/saves/SaveButton';
 import { ShareButton } from '../features/recipes/ShareButton';
@@ -150,6 +171,9 @@ export const RecipeDetailPage: React.FC = () => {
     const bayesian = recipe.stat?.bayesian_score ?? null;
     const headlineScore = bayesian ?? ratingsAvg;
     const steps = (recipe.instructions ?? '').split(/\r?\n/).filter((step) => step.trim().length > 0);
+    const prepTime = formatMinutes(recipe.prep_minutes);
+    const cookTime = formatMinutes(recipe.cook_minutes);
+    const spice = spiceMetaFor(recipe.spice_level);
     const reviews = recipe.ratings ?? [];
     const distribution = [5, 4, 3, 2, 1].map((stars) => ({ stars, count: reviews.filter((r) => r.stars === stars).length }));
 
@@ -214,6 +238,11 @@ export const RecipeDetailPage: React.FC = () => {
                         <h1 className="mt-3 font-display text-4xl leading-[1.02] font-semibold tracking-tight text-ink text-balance sm:text-5xl lg:text-6xl">
                             {recipe.title}
                         </h1>
+                        {recipe.name_bn && (
+                            <p lang="bn" className="mt-2.5 text-2xl leading-snug font-medium text-ink-2 sm:text-3xl">
+                                {recipe.name_bn}
+                            </p>
+                        )}
                         <div className="mt-5 inline-flex items-center gap-3 rounded-full border border-line bg-surface py-1.5 pr-4 pl-1.5">
                             {recipe.source === 'user' && recipe.author ? (
                                 <Avatar name={recipe.author.name} size="md" />
@@ -241,6 +270,22 @@ export const RecipeDetailPage: React.FC = () => {
                         <Meta icon={Users} tone="text-mint">
                             {recipe.servings} servings
                         </Meta>
+                        {prepTime && (
+                            <Meta icon={Timer} tone="text-primary">
+                                {prepTime} prep
+                            </Meta>
+                        )}
+                        {cookTime && (
+                            <Meta icon={CookingPot} tone="text-primary">
+                                {cookTime} cooking
+                            </Meta>
+                        )}
+                        {spice && (
+                            <Meta icon={Flame} tone={spice.tone}>
+                                <span className="sr-only">Spice level: </span>
+                                {spice.label}
+                            </Meta>
+                        )}
                         <Meta icon={ListChecks} tone="text-turmeric">
                             {recipe.ingredients?.length ?? 0} ingredients
                         </Meta>
@@ -360,7 +405,14 @@ export const RecipeDetailPage: React.FC = () => {
                                                     {formatQuantity(ing.quantity)} {ing.unit && <span className="text-xs font-medium text-ink-3">{ing.unit}</span>}
                                                 </span>
                                             )}
-                                            <span className={`text-sm text-ink ${ing.ingredient ? 'capitalize' : ''}`}>{ing.ingredient?.canonical_name || ing.raw_text}</span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                                    <span className={`text-sm text-ink ${ing.ingredient ? 'capitalize' : ''}`}>{ing.ingredient?.canonical_name || ing.raw_text}</span>
+                                                    {ing.is_optional && <Badge size="sm">Optional</Badge>}
+                                                </span>
+                                                {/* The cook's aside — “3 medium, halved” — never part of the name. */}
+                                                {ing.note && <span className="mt-0.5 block text-xs leading-relaxed text-ink-3 italic">{ing.note}</span>}
+                                            </span>
                                         </li>
                                     );
                                 })}

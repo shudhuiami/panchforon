@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Recipes\Schemas;
 
 use App\Enums\ModerationStatus;
 use App\Enums\RecipeSource;
+use App\Enums\SpiceLevel;
+use App\Filament\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -31,6 +33,11 @@ class RecipeInfolist
                             ->color(fn (ModerationStatus $state): string => $state->color())
                             ->icon(fn (ModerationStatus $state): string => $state->icon()),
 
+                        TextEntry::make('name_bn')
+                            ->label('Bengali title')
+                            ->columnSpanFull()
+                            ->placeholder('Not given'),
+
                         TextEntry::make('source')
                             ->label('Source')
                             ->badge()
@@ -43,6 +50,37 @@ class RecipeInfolist
 
                         TextEntry::make('cuisine')->placeholder('-'),
                         TextEntry::make('category')->placeholder('-'),
+                    ]),
+
+                Section::make('Timing and heat')
+                    ->columns(4)
+                    ->schema([
+                        TextEntry::make('prep_minutes')
+                            ->label('Prep')
+                            ->formatStateUsing(fn (int $state): string => "{$state} min")
+                            ->placeholder('Not given'),
+
+                        TextEntry::make('cook_minutes')
+                            ->label('Cook')
+                            ->formatStateUsing(fn (int $state): string => "{$state} min")
+                            ->placeholder('Not given'),
+
+                        TextEntry::make('total_minutes')
+                            ->label('Total')
+                            ->state(function (Recipe $record): ?string {
+                                $total = RecipeResource::totalMinutes($record);
+
+                                return $total === null ? null : "{$total} min";
+                            })
+                            ->weight('medium')
+                            ->placeholder('-'),
+
+                        TextEntry::make('spice_level')
+                            ->label('Spice level')
+                            ->badge()
+                            ->formatStateUsing(fn (SpiceLevel $state): string => $state->label())
+                            ->color(fn (SpiceLevel $state): string => $state->color())
+                            ->placeholder('Not stated'),
                     ]),
 
                 Section::make('Ratings')

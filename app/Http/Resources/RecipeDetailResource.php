@@ -30,12 +30,17 @@ class RecipeDetailResource extends JsonResource
             'moderation_status' => $this->moderation_status->value,
             'external_id' => $this->external_id,
             'title' => $this->title,
+            'name_bn' => $this->name_bn,
             'slug' => $this->slug,
             'cuisine' => $this->cuisine,
             'category' => $this->category,
             'instructions' => $this->instructions,
             'image_url' => $this->image_url,
             'servings' => $this->servings,
+            'prep_minutes' => $this->prep_minutes,
+            'cook_minutes' => $this->cook_minutes,
+            'total_minutes' => $this->totalMinutes(),
+            'spice_level' => $this->spice_level?->value,
             'source_url' => $this->source_url,
             'ingredients' => RecipeIngredientResource::collection($this->whenLoaded('ingredients')),
             'stat' => new RecipeStatResource($this->whenLoaded('stat')),
@@ -46,5 +51,19 @@ class RecipeDetailResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * How long the dish takes end to end. A recipe that records only one of the
+     * two times still reports that one; null means nothing is known at all,
+     * which a card can show as "—" rather than a misleading zero.
+     */
+    private function totalMinutes(): ?int
+    {
+        if ($this->prep_minutes === null && $this->cook_minutes === null) {
+            return null;
+        }
+
+        return (int) $this->prep_minutes + (int) $this->cook_minutes;
     }
 }

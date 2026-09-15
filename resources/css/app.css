@@ -136,6 +136,11 @@
     /* Typography — self-hosted variable fonts, imported in resources/js/app.tsx */
     --font-sans: 'Instrument Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+    /* Bangla: neither bundled face carries Bengali glyphs, so a Bangla name set
+       in them falls back per-character to whatever the browser picks. This is
+       the platform stack, best face first, ending in the sans so Latin
+       characters inside a Bangla string still look like the rest of the page. */
+    --font-bangla: 'Noto Sans Bengali', 'Hind Siliguri', 'Nirmala UI', 'Shonar Bangla', Vrinda, Kalpurush, SolaimanLipi, var(--font-sans);
 
     --text-xs: 0.75rem;
     --text-xs--line-height: 1rem;
@@ -242,6 +247,13 @@
         letter-spacing: -0.02em;
         color: var(--ink);
         font-optical-sizing: auto;
+    }
+    /* Bangla names sit inside Latin headings and lists, where the display serif
+       has no Bengali glyphs and the tightened tracking pinches the conjuncts.
+       Marking an element lang="bn" opts it out of both — nothing else needed. */
+    :lang(bn) {
+        font-family: var(--font-bangla);
+        letter-spacing: normal;
     }
     ::selection { background: var(--primary); color: var(--on-primary); }
     :focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 0.5rem; }

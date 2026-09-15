@@ -19,7 +19,10 @@ class IngredientResource extends JsonResource
         return [
             'id' => $this->id,
             'canonical_name' => $this->canonical_name,
+            'name_bn' => $this->name_bn,
             'default_dimension' => $this->default_dimension->value,
+            'is_shoppable' => (bool) $this->is_shoppable,
+            'preferred_unit' => $this->preferred_unit,
         ];
     }
 }

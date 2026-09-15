@@ -85,41 +85,20 @@ class RecipeController extends Controller
             'source' => RecipeSource::User,
             'moderation_status' => $request->moderationStatus(),
             'title' => $title,
+            'name_bn' => $request->input('name_bn'),
             'slug' => $slug,
             'cuisine' => $request->cuisine,
             'category' => $request->category,
             'instructions' => $request->instructions,
             'image_url' => $request->image_url,
             'servings' => $request->integer('servings', 4),
+            'prep_minutes' => $request->input('prep_minutes'),
+            'cook_minutes' => $request->input('cook_minutes'),
+            'spice_level' => $request->input('spice_level'),
             'source_url' => $request->source_url,
         ]);
 
-        $ingredientsData = (array) $request->input('ingredients', []);
-        $position = 0;
-
-        foreach ($ingredientsData as $ingItem) {
-            $rawText = ! empty($ingItem['raw_text']) ? trim((string) $ingItem['raw_text']) : '';
-            $customName = ! empty($ingItem['name']) ? trim((string) $ingItem['name']) : '';
-            $qty = isset($ingItem['quantity']) && $ingItem['quantity'] !== '' ? (float) $ingItem['quantity'] : null;
-            $unit = ! empty($ingItem['unit']) ? trim((string) $ingItem['unit']) : null;
-
-            if ($rawText === '' && $customName !== '') {
-                $rawText = trim(($qty !== null ? "{$qty} " : '').($unit ? "{$unit} " : '').$customName);
-            }
-
-            $parsed = $parser->parse($rawText !== '' ? $rawText : $customName, function (string $name) {
-                return $this->resolveOrCreateIngredient($name);
-            });
-
-            RecipeIngredient::create([
-                'recipe_id' => $recipe->id,
-                'ingredient_id' => $parsed->ingredientId,
-                'quantity' => $qty ?? $parsed->quantity,
-                'unit' => $unit ?? $parsed->unit,
-                'raw_text' => $rawText !== '' ? $rawText : ($customName ?: 'Ingredient'),
-                'position' => $position++,
-            ]);
-        }
+        $this->writeIngredients($recipe, (array) $request->input('ingredients', []), $parser);
 
         // Initialize recipe stat
         $rankingService->updateRecipeStats($recipe->id);
@@ -149,7 +128,18 @@ class RecipeController extends Controller
             abort(403, 'You are not authorized to update this recipe.');
         }
 
-        $data = $request->safe()->only(['cuisine', 'category', 'instructions', 'image_url', 'servings', 'source_url']);
+        $data = $request->safe()->only([
+            'name_bn',
+            'cuisine',
+            'category',
+            'instructions',
+            'image_url',
+            'servings',
+            'prep_minutes',
+            'cook_minutes',
+            'spice_level',
+            'source_url',
+        ]);
 
         if ($recipe->isDraft() && $request->publishesDraft()) {
             $this->assertSubmissionsOpen();
@@ -173,37 +163,55 @@ class RecipeController extends Controller
 
         if ($request->has('ingredients')) {
             $recipe->ingredients()->delete();
-            $position = 0;
-            $ingredientsData = (array) $request->input('ingredients', []);
-
-            foreach ($ingredientsData as $ingItem) {
-                $rawText = ! empty($ingItem['raw_text']) ? trim((string) $ingItem['raw_text']) : '';
-                $customName = ! empty($ingItem['name']) ? trim((string) $ingItem['name']) : '';
-                $qty = isset($ingItem['quantity']) && $ingItem['quantity'] !== '' ? (float) $ingItem['quantity'] : null;
-                $unit = ! empty($ingItem['unit']) ? trim((string) $ingItem['unit']) : null;
-
-                if ($rawText === '' && $customName !== '') {
-                    $rawText = trim(($qty !== null ? "{$qty} " : '').($unit ? "{$unit} " : '').$customName);
-                }
-
-                $parsed = $parser->parse($rawText !== '' ? $rawText : $customName, function (string $name) {
-                    return $this->resolveOrCreateIngredient($name);
-                });
-
-                RecipeIngredient::create([
-                    'recipe_id' => $recipe->id,
-                    'ingredient_id' => $parsed->ingredientId,
-                    'quantity' => $qty ?? $parsed->quantity,
-                    'unit' => $unit ?? $parsed->unit,
-                    'raw_text' => $rawText !== '' ? $rawText : ($customName ?: 'Ingredient'),
-                    'position' => $position++,
-                ]);
-            }
+            $this->writeIngredients($recipe, (array) $request->input('ingredients', []), $parser);
         }
 
         $recipe->load(['user', 'ingredients.ingredient', 'stat', 'ratings.user']);
 
         return new RecipeDetailResource($recipe);
+    }
+
+    /**
+     * Write a recipe's ingredient rows, in the order they were sent.
+     *
+     * A row can arrive structured (name, quantity, unit) or as one line of free
+     * text; the parser fills in whatever was not sent, and anything the client
+     * stated explicitly wins over what was parsed out of the text. is_optional
+     * and note belong to the row rather than to the ingredient, so they are
+     * taken verbatim and never inferred.
+     *
+     * @param  array<int|string, mixed>  $rows
+     */
+    protected function writeIngredients(Recipe $recipe, array $rows, IngredientParser $parser): void
+    {
+        $position = 0;
+
+        foreach ($rows as $ingItem) {
+            $rawText = ! empty($ingItem['raw_text']) ? trim((string) $ingItem['raw_text']) : '';
+            $customName = ! empty($ingItem['name']) ? trim((string) $ingItem['name']) : '';
+            $qty = isset($ingItem['quantity']) && $ingItem['quantity'] !== '' ? (float) $ingItem['quantity'] : null;
+            $unit = ! empty($ingItem['unit']) ? trim((string) $ingItem['unit']) : null;
+            $note = ! empty($ingItem['note']) ? trim((string) $ingItem['note']) : null;
+
+            if ($rawText === '' && $customName !== '') {
+                $rawText = trim(($qty !== null ? "{$qty} " : '').($unit ? "{$unit} " : '').$customName);
+            }
+
+            $parsed = $parser->parse($rawText !== '' ? $rawText : $customName, function (string $name) {
+                return $this->resolveOrCreateIngredient($name);
+            });
+
+            RecipeIngredient::create([
+                'recipe_id' => $recipe->id,
+                'ingredient_id' => $parsed->ingredientId,
+                'quantity' => $qty ?? $parsed->quantity,
+                'unit' => $unit ?? $parsed->unit,
+                'is_optional' => ! empty($ingItem['is_optional']),
+                'note' => $note,
+                'raw_text' => $rawText !== '' ? $rawText : ($customName ?: 'Ingredient'),
+                'position' => $position++,
+            ]);
+        }
     }
 
     /**

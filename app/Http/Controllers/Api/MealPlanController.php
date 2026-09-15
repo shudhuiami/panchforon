@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\DTOs\ParsedIngredient;
 use App\DTOs\RecipePlanItemInput;
 use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use App\Http\Resources\MealPlanSummaryResource;
 use App\Http\Resources\ShoppingListItemResource;
 use App\Models\MealPlan;
 use App\Models\MealPlanItem;
+use App\Models\RecipeIngredient;
 use App\Models\ShoppingListItem;
 use App\Services\IngredientParser;
 use App\Services\MergeEngine;
@@ -305,17 +307,16 @@ class MealPlanController extends Controller
             $multiplier = (float) ($planItem->servings / ($recipe->servings ?: 4));
 
             foreach ($recipe->ingredients as $ri) {
-                $parsed = $parser->parse($ri->raw_text);
-
-                if ($ri->ingredient_id) {
-                    $parsed = $parsed->withIngredientId($ri->ingredient_id);
-                }
-                if ($ri->ingredient !== null) {
-                    $parsed = $parsed->withDimension($ri->ingredient->default_dimension);
+                /**
+                 * Water is a real row on a real recipe and it scales with the
+                 * dish, but nobody buys it, so it never reaches the list.
+                 */
+                if ($ri->ingredient !== null && $ri->ingredient->is_shoppable === false) {
+                    continue;
                 }
 
                 $inputs[] = new RecipePlanItemInput(
-                    ingredient: $parsed,
+                    ingredient: $this->shoppingInput($ri, $parser),
                     servingsMultiplier: $multiplier,
                     recipeTitle: $recipe->title,
                 );
@@ -338,6 +339,7 @@ class MealPlanController extends Controller
                 'quantity' => $line->quantity,
                 'unit' => $line->unit,
                 'is_unmerged' => $line->isUnmerged,
+                'is_optional' => $line->isOptional,
                 'source_note' => $line->sourceNote,
                 'is_checked' => $isChecked,
             ]);
@@ -346,6 +348,48 @@ class MealPlanController extends Controller
         $items = $plan->shoppingListItems()->get();
 
         return ShoppingListItemResource::collection($items);
+    }
+
+    /**
+     * One recipe line, as the merge engine wants it.
+     *
+     * The stored quantity and unit are the truth: a recipe written in the app
+     * says what it means, and re-reading the sentence can only lose to it.
+     * Rows that came in from an import often carry nothing but that sentence,
+     * so those — and only those — are parsed. The unit decides the dimension
+     * downstream; the ingredient's default_dimension rides along as the
+     * fallback for a line with no usable unit.
+     */
+    private function shoppingInput(RecipeIngredient $row, IngredientParser $parser): ParsedIngredient
+    {
+        $ingredient = $row->ingredient;
+        $quantity = $row->quantity;
+        $unit = $this->cleanUnit($row->unit);
+        $parsedName = null;
+
+        if ($quantity === null) {
+            $parsed = $parser->parse($row->raw_text);
+            $quantity = $parsed->quantity;
+            $unit ??= $this->cleanUnit($parsed->unit);
+            $parsedName = $parsed->name;
+        }
+
+        return new ParsedIngredient(
+            quantity: $quantity,
+            unit: $unit,
+            name: $ingredient !== null ? $ingredient->canonical_name : $parsedName,
+            rawText: $row->raw_text,
+            ingredientId: $row->ingredient_id,
+            dimension: $ingredient?->default_dimension,
+            isOptional: $row->is_optional,
+        );
+    }
+
+    private function cleanUnit(?string $unit): ?string
+    {
+        $unit = trim((string) $unit);
+
+        return $unit === '' ? null : $unit;
     }
 
     /**
