@@ -1,7 +1,7 @@
 export type ModerationStatus = 'draft' | 'pending' | 'approved' | 'unpublished';
 
 /** Which meal of the day a planned dish belongs to. */
-export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'snack' | 'dinner' | 'supper';
 
 /** How hot a dish is. Null on the many recipes with nothing to say about it. */
 export type SpiceLevel = 'mild' | 'medium' | 'hot';
