@@ -23,8 +23,9 @@ import { StatusPanel } from '../components/common/StatusPanel';
 import { Reveal } from '../components/motion/Reveal';
 import { AddDishModal } from '../features/meal-plan/AddDishModal';
 import { PlanDayColumn } from '../features/meal-plan/PlanDayColumn';
-import { PlanDishRow } from '../features/meal-plan/PlanDishRow';
 import { PlanRangeForm } from '../features/meal-plan/PlanRangeForm';
+import { PlanUndatedTray } from '../features/meal-plan/PlanUndatedTray';
+import { PlanDragProvider, PlanMoveAlert } from '../features/meal-plan/planDrag';
 import { IsoDate, clampIso, formatRange, listRange, todayIso } from '../features/meal-plan/dates';
 import { useGenerateShoppingList, useMealPlan, useUpdatePlan } from '../features/meal-plan/useMealPlan';
 
@@ -165,63 +166,53 @@ export const MealPlanPage: React.FC = () => {
                 </section>
             )}
 
-            {undated.length > 0 && (
-                <section className="mt-8 rounded-3xl border border-dashed border-line-strong bg-surface-2 p-5 sm:p-6" aria-labelledby="undated-heading">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 id="undated-heading" className="font-display text-xl font-semibold text-ink">
-                                Picked, not yet dated
-                            </h2>
-                            <p className="mt-1 text-sm text-ink-2">Give each one a day and it joins the right column below.</p>
-                        </div>
-                        <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-ink-2 tabular-nums">
-                            {undated.length} {undated.length === 1 ? 'dish' : 'dishes'}
-                        </span>
-                    </div>
-                    <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        {undated.map((item) => (
-                            <PlanDishRow key={item.id} item={item} days={days} />
-                        ))}
-                    </ul>
-                </section>
-            )}
+            <PlanDragProvider>
+                <PlanMoveAlert className="mt-6" />
 
-            <section className="mt-8" aria-label="Days in this plan">
-                {items.length === 0 ? (
-                    <EmptyState
-                        icon={Utensils}
-                        title="Nothing planned yet"
-                        description="Pick the days you’re cooking for, then drop a dish onto each one. Every dish you add here ends up on one shopping list."
-                        actionLabel="Find dishes"
-                        onAction={() => setAddTarget({ day: defaultAddDay })}
-                    />
-                ) : (
-                    <>
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                            <h2 className="font-display text-2xl font-semibold text-ink">
-                                {scheduledCount} {scheduledCount === 1 ? 'dish' : 'dishes'} across {plan.day_count} {plan.day_count === 1 ? 'day' : 'days'}
-                            </h2>
-                            {days.length > 7 && (
-                                <Button variant="ghost" size="sm" onClick={() => setHideEmptyDays((hidden) => !hidden)} aria-pressed={hideEmptyDays}>
-                                    <EyeOff className="size-4" aria-hidden="true" />
-                                    {hideEmptyDays ? 'Show every day' : 'Hide empty days'}
-                                </Button>
-                            )}
-                        </div>
-                        {visibleDays.length === 0 ? (
-                            <p className="rounded-3xl border border-dashed border-line-strong bg-surface p-8 text-center text-sm text-ink-3">
-                                No day has a dish on it yet.
-                            </p>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                                {visibleDays.map((day) => (
-                                    <PlanDayColumn key={day} iso={day} items={byDay.get(day) ?? []} days={days} onAddDish={(iso) => setAddTarget({ day: iso })} />
-                                ))}
+                {undated.length > 0 && <PlanUndatedTray items={undated} days={days} />}
+
+                <section className="mt-8" aria-label="Days in this plan">
+                    {items.length === 0 ? (
+                        <EmptyState
+                            icon={Utensils}
+                            title="Nothing planned yet"
+                            description="Pick the days you’re cooking for, then drop a dish onto each one. Every dish you add here ends up on one shopping list."
+                            actionLabel="Find dishes"
+                            onAction={() => setAddTarget({ day: defaultAddDay })}
+                        />
+                    ) : (
+                        <>
+                            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h2 className="font-display text-2xl font-semibold text-ink">
+                                        {scheduledCount} {scheduledCount === 1 ? 'dish' : 'dishes'} across {plan.day_count} {plan.day_count === 1 ? 'day' : 'days'}
+                                    </h2>
+                                    <p className="mt-1 hidden text-sm text-ink-3 pointer-fine:block">
+                                        Drag a dish onto another day to move it, or use the day menu on the card.
+                                    </p>
+                                </div>
+                                {days.length > 7 && (
+                                    <Button variant="ghost" size="sm" onClick={() => setHideEmptyDays((hidden) => !hidden)} aria-pressed={hideEmptyDays}>
+                                        <EyeOff className="size-4" aria-hidden="true" />
+                                        {hideEmptyDays ? 'Show every day' : 'Hide empty days'}
+                                    </Button>
+                                )}
                             </div>
-                        )}
-                    </>
-                )}
-            </section>
+                            {visibleDays.length === 0 ? (
+                                <p className="rounded-3xl border border-dashed border-line-strong bg-surface p-8 text-center text-sm text-ink-3">
+                                    No day has a dish on it yet.
+                                </p>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                                    {visibleDays.map((day) => (
+                                        <PlanDayColumn key={day} iso={day} items={byDay.get(day) ?? []} days={days} onAddDish={(iso) => setAddTarget({ day: iso })} />
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </section>
+            </PlanDragProvider>
 
             <Reveal as="section" className="mt-12 rounded-3xl border border-line bg-surface p-6 sm:p-8" aria-labelledby="merge-heading">
                 <h2 id="merge-heading" className="font-display text-2xl font-semibold text-ink">

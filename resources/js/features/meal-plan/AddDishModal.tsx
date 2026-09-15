@@ -6,6 +6,7 @@ import { MealSlot } from '../../types/api';
 import { recipesApi } from '../../api/recipes';
 import { Modal } from '../../components/ui/Modal';
 import { Photo } from '../../components/ui/Photo';
+import { QuantityStepper } from '../../components/ui/QuantityStepper';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { RecipeFallback } from '../recipes/RecipeCard';
 import { SearchBox } from '../recipes/SearchBox';
@@ -23,14 +24,27 @@ export interface AddDishModalProps {
     defaultSlot?: MealSlot;
 }
 
+/**
+ * How many the cook is feeding, until they say otherwise.
+ *
+ * One number stands for every dish in the list, so it can't follow whichever
+ * recipe you happen to be looking at — it would change under your hand between
+ * the first dish and the third. It is the household's number, not the recipe's:
+ * set it once and every dish added in this sitting is added for that many, and
+ * each card's own stepper retunes a single dish afterwards.
+ */
+const DEFAULT_SERVINGS = 4;
+
 /** Search the catalogue and drop dishes straight onto one day of the plan. */
 export const AddDishModal: React.FC<AddDishModalProps> = ({ isOpen, onClose, day, days, defaultSlot = 'dinner' }) => {
     const { addItem } = usePlanItemActions();
     const [query, setQuery] = useState('');
     const [slot, setSlot] = useState<MealSlot>(defaultSlot);
     const [targetDay, setTargetDay] = useState<string>(day ?? UNDATED);
+    const [servings, setServings] = useState(DEFAULT_SERVINGS);
     const [addedIds, setAddedIds] = useState<number[]>([]);
 
+    /** The day follows whichever column was clicked; servings deliberately doesn't reset — a household stays the same size between two openings. */
     useEffect(() => {
         if (!isOpen) return;
         setTargetDay(day ?? UNDATED);
@@ -50,10 +64,11 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({ isOpen, onClose, day
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Add a dish" maxWidth="lg">
             <p className="text-sm text-ink-2">
-                {targetDay === UNDATED ? 'It will wait in the undated tray until you give it a day.' : `Planned for ${formatDayLong(targetDay)}.`}
+                {targetDay === UNDATED ? 'It will wait in the undated tray until you give it a day.' : `Planned for ${formatDayLong(targetDay)}.`} Every dish you
+                add here is added for {servings} {servings === 1 ? 'serving' : 'servings'}.
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <PlanSelect label="Day for the new dish" value={targetDay} icon={CalendarDays} onChange={setTargetDay}>
                     <option value={UNDATED}>Not dated</option>
                     {days.map((option) => (
@@ -69,6 +84,17 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({ isOpen, onClose, day
                         </option>
                     ))}
                 </PlanSelect>
+                <div className="col-span-2 flex h-10 items-center justify-between gap-2 sm:col-span-1">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">Cook for</span>
+                    <QuantityStepper
+                        value={servings}
+                        onChange={setServings}
+                        min={1}
+                        max={50}
+                        size="sm"
+                        ariaLabel="Servings for the new dishes"
+                    />
+                </div>
             </div>
 
             <div className="mt-4">
@@ -106,7 +132,7 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({ isOpen, onClose, day
                                         addItem.mutate(
                                             {
                                                 recipe_id: recipe.id,
-                                                servings: recipe.servings || 4,
+                                                servings,
                                                 planned_for: targetDay === UNDATED ? null : targetDay,
                                                 meal_slot: slot,
                                             },

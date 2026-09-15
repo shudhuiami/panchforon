@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, X } from 'lucide-react';
+import { CalendarDays, GripVertical, X } from 'lucide-react';
 import { MealPlanItem, MealSlot } from '../../types/api';
 import { IconButton } from '../../components/ui/IconButton';
 import { Photo } from '../../components/ui/Photo';
@@ -9,6 +9,7 @@ import { RecipeFallback } from '../recipes/RecipeCard';
 import { PlanSelect, UNDATED } from './PlanSelect';
 import { MEAL_SLOTS, SLOT_META, slotLabel } from './slots';
 import { IsoDate, dayOptionLabel } from './dates';
+import { useDishDrag } from './planDrag';
 import { usePlanItemActions } from './useMealPlan';
 
 export interface PlanDishRowProps {
@@ -23,6 +24,10 @@ export interface PlanDishRowProps {
  * One planned dish. Servings, meal slot, the day it is cooked on and removing
  * it are all saved the moment they change — the cached plan updates first, so
  * a dish jumps to its new day straight away.
+ *
+ * On a pointer device the whole card is also draggable onto another day. The
+ * inner link and photo give up their own native drags so the card is what
+ * travels, and the selects below stay the way a phone or a keyboard moves it.
  */
 export const PlanDishRow: React.FC<PlanDishRowProps> = ({ item, days, readOnly = false }) => {
     const { updateItem, removeItem } = usePlanItemActions();
@@ -34,18 +39,29 @@ export const PlanDishRow: React.FC<PlanDishRowProps> = ({ item, days, readOnly =
 
     const isLeaving = removeItem.isPending && removeItem.variables === item.id;
     const isSaving = updateItem.isPending && updateItem.variables?.id === item.id;
+    const drag = useDishDrag(item, title, !readOnly && !isLeaving);
 
     return (
         <li
-            className={`rounded-2xl border border-line bg-surface-2 p-3 transition-opacity ${isLeaving ? 'pointer-events-none opacity-40' : ''} ${isSaving ? 'opacity-70' : ''}`}
+            {...drag.props}
+            className={`group/dish rounded-2xl border bg-surface-2 p-3 transition-opacity ${drag.enabled ? 'cursor-grab active:cursor-grabbing' : ''} ${
+                drag.isDragging ? 'border-primary opacity-50' : 'border-line'
+            } ${isLeaving ? 'pointer-events-none opacity-40' : ''} ${isSaving ? 'opacity-70' : ''}`}
             aria-busy={isSaving || isLeaving}
         >
             <div className="flex items-start gap-3">
-                <Link to={to} tabIndex={-1} aria-hidden="true" className="block size-12 shrink-0 overflow-hidden rounded-xl bg-surface-3">
-                    <Photo src={recipe?.image_url} alt="" loading="lazy" className="h-full w-full object-cover" fallback={<RecipeFallback recipe={{ id: item.recipe_id, title }} />} />
+                <Link to={to} tabIndex={-1} aria-hidden="true" draggable={false} className="block size-12 shrink-0 overflow-hidden rounded-xl bg-surface-3">
+                    <Photo
+                        src={recipe?.image_url}
+                        alt=""
+                        loading="lazy"
+                        draggable={false}
+                        className="h-full w-full object-cover"
+                        fallback={<RecipeFallback recipe={{ id: item.recipe_id, title }} />}
+                    />
                 </Link>
                 <div className="min-w-0 flex-1">
-                    <Link to={to} className="line-clamp-2 block font-display text-[15px] leading-tight font-semibold text-ink transition-colors hover:text-primary">
+                    <Link to={to} draggable={false} className="line-clamp-2 block font-display text-[15px] leading-tight font-semibold text-ink transition-colors hover:text-primary">
                         {title}
                     </Link>
                     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-ink-3">
@@ -59,6 +75,15 @@ export const PlanDishRow: React.FC<PlanDishRowProps> = ({ item, days, readOnly =
                         {recipe?.cuisine && <span>{recipe.cuisine}</span>}
                     </p>
                 </div>
+                {drag.enabled && (
+                    <span
+                        title="Drag this dish onto another day"
+                        aria-hidden="true"
+                        className="mt-1 hidden shrink-0 text-ink-3 transition-colors pointer-fine:block group-hover/dish:text-ink-2"
+                    >
+                        <GripVertical className="size-4" />
+                    </span>
+                )}
                 {!readOnly && (
                     <IconButton label={`Remove ${title} from the plan`} variant="ghost" size="sm" onClick={() => removeItem.mutate(item.id)} disabled={isLeaving}>
                         <X className="size-4" />
