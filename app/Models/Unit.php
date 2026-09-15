@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class Unit extends Model
 {
-    public const CACHE_KEY = 'units.definitions';
+    public const CACHE_KEY = 'units.definitions.v2';
 
     /** A day is only a safety net; a write to the table forgets the entry at once. */
     private const TTL_SECONDS = 86400;
@@ -81,11 +81,22 @@ class Unit extends Model
      */
     public static function cachedDefinitions(): array
     {
-        return Cache::remember(self::CACHE_KEY, self::TTL_SECONDS, fn (): array => self::query()
+        /**
+         * Rows go into the cache as plain arrays and come back as value
+         * objects here: a cache that outlives a deploy must not hold a
+         * serialised class, or the day that class moves it returns an
+         * incomplete object instead of an error anyone can act on.
+         */
+        $cached = Cache::remember(self::CACHE_KEY, self::TTL_SECONDS, fn (): array => self::query()
             ->orderBy('position')
             ->get()
-            ->map(fn (self $unit): UnitDefinition => $unit->toDefinition())
+            ->map(fn (self $unit): array => $unit->toDefinition()->toArray())
             ->all());
+
+        return array_map(
+            fn (array $values): UnitDefinition => UnitDefinition::fromArray($values),
+            $cached
+        );
     }
 
     public static function forgetDefinitions(): void

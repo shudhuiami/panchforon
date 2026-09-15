@@ -85,7 +85,7 @@ test('an unknown slot is refused', function () {
 
     $this->actingAs($user)->postJson('/api/meal-plan/items', [
         'recipe_id' => $recipe->id,
-        'meal_slot' => 'brunch',
+        'meal_slot' => 'elevenses',
     ])->assertStatus(422)->assertJsonValidationErrors('meal_slot');
 });
 
