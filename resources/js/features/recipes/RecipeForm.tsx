@@ -83,7 +83,7 @@ interface RecipeFormProps {
 
 const COMMON_UNITS = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece', 'clove', 'bunch', 'pinch', 'slice', 'can'];
 const COMMON_CUISINES = ['Bangladeshi', 'Indian', 'Pakistani', 'Italian', 'Mexican', 'Chinese', 'Thai', 'Japanese', 'British', 'American', 'Mediterranean'];
-const COMMON_CATEGORIES = ['Curry', 'Rice & Biryani', 'Seafood', 'Chicken', 'Beef & Mutton', 'Vegetarian', 'Dessert', 'Breakfast', 'Snack & Street Food'];
+const COMMON_CATEGORIES = ['Curry', 'Rice & Biryani', 'Seafood', 'Chicken', 'Beef & Mutton', 'Vegetarian', 'Bhorta & Bhaji', 'Dessert', 'Breakfast', 'Snack & Street Food'];
 
 const emptyIngredient = (): RecipeFormIngredient => ({ name: '', quantity: '', unit: '', raw_text: '', note: '', is_optional: false });
 

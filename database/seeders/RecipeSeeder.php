@@ -24,7 +24,7 @@ use RuntimeException;
 /**
  * The catalogue, the demo accounts, and one week of planned meals.
  *
- * The recipes themselves live in database/data/bangladeshi-recipes.json, where
+ * The recipes themselves live in database/data/bangladeshi-recipes-80.json, where
  * every amount is already a number and a unit: "500–650 ml" became 575 ml when
  * the file was written, not when the seeder runs. Nothing here parses a
  * sentence, because nothing here has to.
@@ -33,24 +33,71 @@ use RuntimeException;
  * position within a recipe, and the demo plan is rebuilt from scratch, so a
  * second run neither duplicates a row nor leaves an edited one behind.
  *
+ * @phpstan-type DatasetIngredient array{ingredient_slug: string, ingredient_name: string, quantity: float|int, unit: string, is_optional?: bool}
+ * @phpstan-type DatasetRecipe array{name: string, name_bn?: string, slug: string, category: string, servings: int, prep_minutes?: int, cook_minutes?: int, spice_level?: string, ingredients: array<int, DatasetIngredient>, steps: array<int, string>, notes?: string}
  * @phpstan-type RecipeSeedIngredient array{ingredient: string, quantity: float|int|null, unit: ?string, is_optional: bool, note: ?string, raw_text: string}
  * @phpstan-type RecipeSeedRow array{slug: string, title: string, name_bn: ?string, cuisine: string, category: string, servings: int, prep_minutes: ?int, cook_minutes: ?int, spice_level: ?string, image_url: ?string, instructions: string, ingredients: array<int, RecipeSeedIngredient>}
  */
 class RecipeSeeder extends Seeder
 {
-    private const DATA_FILE = 'data/bangladeshi-recipes.json';
+    private const DATA_FILE = 'data/bangladeshi-recipes-80.json';
+
+    /**
+     * The dataset groups dishes the way a Bangladeshi cook would; the
+     * storefront offers its own vocabulary. Bhorta earned a category of its
+     * own rather than being folded into Vegetarian — ten of these dishes are
+     * bhorta or bhaji, and that is how anyone here would look for them.
+     */
+    private const CATEGORY_MAP = [
+        'rice_one_pot' => 'Rice & Biryani',
+        'chicken' => 'Chicken',
+        'beef_mutton' => 'Beef & Mutton',
+        'fish_seafood' => 'Seafood',
+        'dal_vegetable' => 'Vegetarian',
+        'bhorta_bhaji' => 'Bhorta & Bhaji',
+        'snack_breakfast' => 'Snack & Street Food',
+        'dessert' => 'Dessert',
+    ];
+
+    /**
+     * The dataset files breakfast and snacks together. Paratha and luchi are
+     * what a morning looks like; the fried three are what a street stall
+     * looks like, so they are sorted by hand rather than in bulk.
+     */
+    private const CATEGORY_BY_SLUG = [
+        'paratha' => 'Breakfast',
+        'luchi' => 'Breakfast',
+    ];
+
+    /**
+     * The photographs that came with the recipes this set replaces, kept
+     * where the dish is still the same dish. The rest have no image: a
+     * gradient is better than a picture of something else.
+     */
+    private const IMAGES = [
+        'beef-bhuna' => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+        'masoor-dal' => 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80',
+        'begun-bhorta' => 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80',
+        'chicken-roast' => 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80',
+    ];
 
     private const DEMO_PLAN_NAME = 'This week';
 
     /**
-     * The thin demo recipes the trial pack replaces. Their slugs differ from
-     * the pack's, so they have to be named to be cleared out; the chicken
-     * roast keeps its slug and is simply overwritten with the real one.
+     * Everything this dataset replaces, by the slug it used to have. The
+     * dishes themselves are all still here — kala bhuna, the roast, the polao,
+     * the shorshe ilish — under the slugs the dataset gives them, so these
+     * rows have to be named to be cleared out.
      */
     private const SUPERSEDED_SLUGS = [
         'smoky-begun-bharta',
         'panch-phoron-masoor-dal-tadka',
         'chittagong-beef-kala-bhuna',
+        'bangladeshi-chicken-roast',
+        'bangladeshi-polao',
+        'rui-machher-jhol',
+        'dudh-semai',
+        'traditional-shorshe-ilish',
     ];
 
     /**
@@ -92,7 +139,7 @@ class RecipeSeeder extends Seeder
         /** @var array<string, Recipe> $recipes */
         $recipes = [];
 
-        foreach ([...$this->packRecipes(), ...$this->legacyRecipes()] as $data) {
+        foreach ($this->packRecipes() as $data) {
             $recipe = $this->upsertRecipe($data, $demoUser, $ingredientIds);
 
             foreach ($ratings[$data['slug']] ?? [] as $rating) {
@@ -257,8 +304,11 @@ class RecipeSeeder extends Seeder
     }
 
     /**
-     * The trial pack: ten dishes standardised for four adults, with every
-     * range already resolved to a single number.
+     * The dataset, as the seeder needs it.
+     *
+     * The file is kept exactly as it was delivered — metadata, validation
+     * status and all — so refreshing the catalogue is a file swap rather than
+     * a rewrite. Everything the app's own shape needs is worked out here.
      *
      * @return array<int, RecipeSeedRow>
      */
@@ -271,44 +321,88 @@ class RecipeSeeder extends Seeder
             throw new RuntimeException("Could not read the recipe data file at {$path}.");
         }
 
-        /** @var array<int, RecipeSeedRow> $decoded */
-        $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        /** @var array{recipes: array<int, DatasetRecipe>} $data */
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
-        return $decoded;
+        return array_map(fn (array $recipe): array => $this->toSeedRow($recipe), $data['recipes']);
     }
 
     /**
-     * Shorshe ilish predates the pack and is not in it, so it is kept here by
-     * hand. Its amounts are deliberately left in spoons: the catalogue should
-     * hold at least one recipe whose units have to be converted before they
-     * can be added up.
-     *
-     * @return array<int, RecipeSeedRow>
+     * @param  DatasetRecipe  $recipe
+     * @return RecipeSeedRow
      */
-    private function legacyRecipes(): array
+    private function toSeedRow(array $recipe): array
     {
+        $slug = $recipe['slug'];
+        $group = $recipe['category'];
+
+        if (! isset(self::CATEGORY_MAP[$group])) {
+            throw new RuntimeException("Recipe {$slug} is filed under \"{$group}\", which has no place in the storefront's categories. Add it to CATEGORY_MAP.");
+        }
+
         return [
-            [
-                'slug' => 'traditional-shorshe-ilish',
-                'title' => 'Traditional Shorshe Ilish',
-                'name_bn' => 'সরষে ইলিশ',
-                'cuisine' => 'Bangladeshi',
-                'category' => 'Seafood',
-                'servings' => 4,
-                'prep_minutes' => 15,
-                'cook_minutes' => 20,
-                'spice_level' => 'hot',
-                'image_url' => 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80',
-                'instructions' => "1. Wash and pat dry Ilish steaks. Rub with turmeric and salt.\n2. Grind yellow and black mustard seeds with green chilies and a pinch of salt into a fine paste.\n3. Heat mustard oil until smoking, lower heat and temper with kalonji.\n4. Add mustard paste, turmeric, and slit green chilies with 1/2 cup warm water.\n5. Gently place the fish steaks into the bubbling gravy. Cook covered for 10 minutes.",
-                'ingredients' => [
-                    ['ingredient' => 'ilish', 'quantity' => 500, 'unit' => 'g', 'is_optional' => false, 'note' => '4 steaks', 'raw_text' => '500 g ilish fish steaks'],
-                    ['ingredient' => 'mustard oil', 'quantity' => 3, 'unit' => 'tbsp', 'is_optional' => false, 'note' => 'Heated until it smokes', 'raw_text' => '3 tbsp mustard oil'],
-                    ['ingredient' => 'turmeric', 'quantity' => 1, 'unit' => 'tsp', 'is_optional' => false, 'note' => null, 'raw_text' => '1 tsp turmeric powder'],
-                    ['ingredient' => 'chili', 'quantity' => 4, 'unit' => 'piece', 'is_optional' => false, 'note' => 'Slit', 'raw_text' => '4 green chilies, slit'],
-                    ['ingredient' => 'nigella', 'quantity' => 1, 'unit' => 'g', 'is_optional' => true, 'note' => 'Kalonji, for the tempering', 'raw_text' => '1 g nigella seed'],
-                    ['ingredient' => 'salt', 'quantity' => null, 'unit' => null, 'is_optional' => false, 'note' => 'To taste', 'raw_text' => 'salt to taste'],
-                ],
-            ],
+            'slug' => $slug,
+            'title' => $recipe['name'],
+            'name_bn' => $recipe['name_bn'] ?? null,
+            'cuisine' => 'Bangladeshi',
+            'category' => self::CATEGORY_BY_SLUG[$slug] ?? self::CATEGORY_MAP[$group],
+            'servings' => $recipe['servings'],
+            'prep_minutes' => $recipe['prep_minutes'] ?? null,
+            'cook_minutes' => $recipe['cook_minutes'] ?? null,
+            'spice_level' => $recipe['spice_level'] ?? null,
+            'image_url' => self::IMAGES[$slug] ?? null,
+            'instructions' => $this->instructionsFor($recipe),
+            'ingredients' => array_map(fn (array $row): array => $this->toIngredientRow($row), $recipe['ingredients']),
+        ];
+    }
+
+    /**
+     * The steps, numbered the way the catalogue reads them, with the recipe's
+     * aside kept at the end — there is no column for it, and dropping a line
+     * about dum heat would lose the only warning the recipe gives.
+     *
+     * @param  DatasetRecipe  $recipe
+     */
+    private function instructionsFor(array $recipe): string
+    {
+        $steps = [];
+
+        foreach ($recipe['steps'] as $index => $step) {
+            $steps[] = ($index + 1).'. '.$step;
+        }
+
+        $instructions = implode("\n", $steps);
+
+        if (isset($recipe['notes']) && trim($recipe['notes']) !== '') {
+            $instructions .= "\n\nNote: ".trim($recipe['notes']);
+        }
+
+        return $instructions;
+    }
+
+    /**
+     * One ingredient row, with the line a cook would have written rebuilt from
+     * the numbers. raw_text is not how the shopping list reads this row — the
+     * quantity and unit columns are — but the column exists, and a sentence is
+     * more use in it than a repeated name.
+     *
+     * @param  DatasetIngredient  $row
+     * @return RecipeSeedIngredient
+     */
+    private function toIngredientRow(array $row): array
+    {
+        $name = mb_strtolower($row['ingredient_name']);
+        $unit = $row['unit'];
+        $amount = rtrim(rtrim(number_format((float) $row['quantity'], 2, '.', ''), '0'), '.');
+
+        return [
+            'ingredient' => $name,
+            'quantity' => $row['quantity'],
+            'unit' => $unit,
+            'is_optional' => $row['is_optional'] ?? false,
+            'note' => null,
+            /** "4 green chili" rather than "4 piece green chili": nobody writes the second one. */
+            'raw_text' => $unit === 'piece' ? "{$amount} {$name}" : "{$amount} {$unit} {$name}",
         ];
     }
 
@@ -325,8 +419,14 @@ class RecipeSeeder extends Seeder
             'beef-bhuna' => [
                 ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Cooked down until the masala clings to the meat. Worth every one of those minutes.'],
             ],
-            'rui-machher-jhol' => [
+            'kala-bhuna' => [
+                ['user' => $demoUser, 'stars' => 5, 'review' => 'Chittagong in a pot. Do not rush the last twenty minutes.'],
+            ],
+            'rui-macher-jhol' => [
                 ['user' => $reviewerUser, 'stars' => 4, 'review' => 'Light, clean gravy. The kalojira is only optional on paper.'],
+            ],
+            'shorshe-ilish' => [
+                ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Pungent, authentic, and truly delicious with steaming hot rice.'],
             ],
             'masoor-dal' => [
                 ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Pure comfort food for any Bengali dinner table.'],
@@ -340,18 +440,21 @@ class RecipeSeeder extends Seeder
             'bhuna-khichuri' => [
                 ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Rainy-day food. One pot, and nothing left over.'],
             ],
-            'bangladeshi-polao' => [
+            'sada-polao' => [
                 ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Fluffy and fragrant, and it does not fight the roast for attention.'],
             ],
-            'bangladeshi-chicken-roast' => [
+            'chicken-roast' => [
                 ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Absolute wedding-style Biye Bari roast flavor! Perfectly balanced sweetness.'],
                 ['user' => $demoUser, 'stars' => 5, 'review' => 'A family staple recipe that never fails.'],
             ],
-            'dudh-semai' => [
+            'kacchi-biryani' => [
+                ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Two hours of dum and the mutton falls off the bone. Worth clearing an afternoon for.'],
+            ],
+            'shemai' => [
                 ['user' => $demoUser, 'stars' => 5, 'review' => 'Eid morning in a bowl. Take it off the heat looser than you think.'],
             ],
-            'traditional-shorshe-ilish' => [
-                ['user' => $reviewerUser, 'stars' => 5, 'review' => 'Pungent, authentic, and truly delicious with steaming hot rice.'],
+            'firni' => [
+                ['user' => $demoUser, 'stars' => 4, 'review' => 'Set it in clay bowls if you have them; it chills better and tastes older.'],
             ],
         ];
     }

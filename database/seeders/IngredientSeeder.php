@@ -6,44 +6,147 @@ use App\Enums\UnitDimension;
 use App\Models\Ingredient;
 use App\Models\IngredientAlias;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 /**
  * The ingredient dictionary: what each thing *is*, independent of how any one
  * recipe measures it.
  *
- * Two rules decide whether a name here becomes its own row or an alias of an
- * existing one:
- *
- *  - Same thing in the trolley, different words on the page → alias.
- *    "ginger paste" is ginger; "garlic paste" is garlic.
- *  - Different thing in the trolley → its own row, even when the words are
- *    close. Green chili, dried red chili and chili powder are three purchases,
- *    and chinigura polao rice is not basmati.
+ * The list itself comes from the recipe dataset, so the dictionary and the
+ * recipes cannot drift apart — every ingredient a recipe names is defined, and
+ * nothing is defined that no recipe uses. What the dataset does not carry is
+ * the vocabulary people actually type: the Bangla names, and the English
+ * variants TheMealDB imports arrive with. Those live in the overlay below and
+ * are matched to the dataset by slug.
  *
  * default_dimension is only the fallback for a line with no usable unit — the
- * unit on the recipe row decides — but it should still say how this dataset
- * actually measures the thing, so the vegetables that are weighed are mass.
+ * unit on the recipe row decides — but it still says how this dataset measures
+ * the thing, so the vegetables that are weighed are mass.
  */
 class IngredientSeeder extends Seeder
 {
+    private const DATA_FILE = 'data/bangladeshi-recipes-80.json';
+
+    /**
+     * Words that should resolve to a dictionary entry, keyed by the dataset's
+     * ingredient slug. An alias is the same thing in the trolley written a
+     * different way — "shorsher tel" is mustard oil — never a different
+     * purchase: ginger paste and ginger are two rows in this dataset, so
+     * neither aliases the other.
+     *
+     * @var array<string, array{name_bn?: string, aliases?: array<int, string>}>
+     */
+    private const OVERLAY = [
+        'onion' => ['name_bn' => 'পেঁয়াজ', 'aliases' => ['onions', 'peyaj', 'pyaj', 'red onion', 'brown onion', 'yellow onion']],
+        'garlic' => ['name_bn' => 'রসুন', 'aliases' => ['garlic clove', 'garlic cloves', 'roshun', 'rasun']],
+        'garlic-paste' => ['name_bn' => 'রসুন বাটা', 'aliases' => ['roshun bata']],
+        'ginger' => ['name_bn' => 'আদা', 'aliases' => ['fresh ginger', 'ada', 'adrak']],
+        'ginger-paste' => ['name_bn' => 'আদা বাটা', 'aliases' => ['ada bata']],
+        'potato' => ['name_bn' => 'আলু', 'aliases' => ['potatoes', 'alu', 'aloo']],
+        'tomato' => ['name_bn' => 'টমেটো', 'aliases' => ['tomatoes', 'fresh tomato', 'tometo']],
+        'eggplant' => ['name_bn' => 'বেগুন', 'aliases' => ['aubergine', 'brinjal', 'begun']],
+        'cauliflower' => ['name_bn' => 'ফুলকপি', 'aliases' => ['cauliflower florets', 'phulkopi', 'fulkopi']],
+        'cabbage' => ['name_bn' => 'বাঁধাকপি', 'aliases' => ['bandhakopi', 'badhakopi']],
+        'green-peas' => ['name_bn' => 'মটরশুঁটি', 'aliases' => ['peas', 'green pea', 'motorshuti', 'matarshuti']],
+        'green-beans' => ['name_bn' => 'বরবটি', 'aliases' => ['french beans', 'borboti']],
+        'carrot' => ['name_bn' => 'গাজর', 'aliases' => ['carrots', 'gajor']],
+        'radish' => ['name_bn' => 'মুলা', 'aliases' => ['mula', 'mooli', 'daikon']],
+        'pumpkin' => ['name_bn' => 'কুমড়া', 'aliases' => ['sweet pumpkin', 'kumra', 'misti kumra']],
+        'bottle-gourd' => ['name_bn' => 'লাউ', 'aliases' => ['lau', 'calabash', 'doodhi']],
+        'ridge-gourd' => ['name_bn' => 'ঝিঙে', 'aliases' => ['jhinge', 'jhinga', 'turai']],
+        'pointed-gourd' => ['name_bn' => 'পটল', 'aliases' => ['potol', 'parwal']],
+        'green-papaya' => ['name_bn' => 'কাঁচা পেঁপে', 'aliases' => ['raw papaya', 'kacha pepe', 'pepe']],
+        'taro-stolon' => ['name_bn' => 'কচুর লতি', 'aliases' => ['kochur loti', 'taro stem']],
+        'red-amaranth' => ['name_bn' => 'লাল শাক', 'aliases' => ['lal shak', 'red spinach', 'amaranth']],
+        'fresh-coriander' => ['name_bn' => 'ধনেপাতা', 'aliases' => ['cilantro', 'coriander', 'coriander leaves', 'dhania', 'dhone pata']],
+        'green-chili' => ['name_bn' => 'কাঁচা মরিচ', 'aliases' => ['chili', 'chillies', 'chilies', 'green chilli', 'morich', 'kacha morich']],
+        'dried-red-chili' => ['name_bn' => 'শুকনা মরিচ', 'aliases' => ['dried red chilli', 'dry red chili', 'dried chili', 'shukna morich', 'shukno morich']],
+        'chili-powder' => ['name_bn' => 'মরিচ গুঁড়া', 'aliases' => ['red chili powder', 'morich gura', 'lal morich']],
+        'turmeric-powder' => ['name_bn' => 'হলুদ', 'aliases' => ['turmeric', 'ground turmeric', 'holud', 'haldi']],
+        'cumin-powder' => ['name_bn' => 'জিরা গুঁড়া', 'aliases' => ['ground cumin', 'cumin', 'jeera', 'jira']],
+        'cumin-seed' => ['name_bn' => 'জিরা', 'aliases' => ['cumin seeds', 'whole cumin', 'gota jira']],
+        'coriander-powder' => ['name_bn' => 'ধনে গুঁড়া', 'aliases' => ['ground coriander', 'dhone gura']],
+        'garam-masala' => ['name_bn' => 'গরম মসলা', 'aliases' => ['garam masala powder', 'allspice blend', 'gorom moshla']],
+        'black-pepper-powder' => ['name_bn' => 'গোলমরিচ গুঁড়া', 'aliases' => ['black pepper', 'ground black pepper', 'pepper', 'golmorich', 'gol morich']],
+        'white-pepper-powder' => ['name_bn' => 'সাদা গোলমরিচ', 'aliases' => ['white pepper', 'ground white pepper']],
+        'bay-leaf' => ['name_bn' => 'তেজপাতা', 'aliases' => ['bay leaves', 'tejpata', 'tej pata']],
+        'cinnamon' => ['name_bn' => 'দারুচিনি', 'aliases' => ['cinnamon stick', 'cinnamon sticks', 'daruchini', 'darchini']],
+        'green-cardamom' => ['name_bn' => 'এলাচ', 'aliases' => ['cardamom', 'cardamom pod', 'cardamom pods', 'elach', 'elachi', 'choto elach']],
+        'clove' => ['name_bn' => 'লবঙ্গ', 'aliases' => ['cloves', 'lobongo', 'laung']],
+        'nigella-seed' => ['name_bn' => 'কালোজিরা', 'aliases' => ['nigella', 'nigella seeds', 'kalojira', 'kalonji', 'black cumin']],
+        'fenugreek-seed' => ['name_bn' => 'মেথি', 'aliases' => ['fenugreek', 'methi', 'methi seeds']],
+        'fennel-seed' => ['name_bn' => 'মৌরি', 'aliases' => ['fennel', 'mouri', 'saunf']],
+        'mustard-seed' => ['name_bn' => 'সরিষা', 'aliases' => ['mustard seeds', 'shorshe', 'sorisha']],
+        'mustard-paste' => ['name_bn' => 'সরিষা বাটা', 'aliases' => ['mustard seed paste', 'shorshe bata']],
+        'salt' => ['name_bn' => 'লবণ', 'aliases' => ['table salt', 'sea salt', 'lobon', 'noon']],
+        'sugar' => ['name_bn' => 'চিনি', 'aliases' => ['granulated sugar', 'white sugar', 'chini']],
+        'chicken' => ['name_bn' => 'মুরগির মাংস', 'aliases' => ['whole chicken', 'chicken curry cut', 'chicken breast', 'boneless chicken', 'chicken leg quarter', 'chicken leg quarters', 'murgir mangsho']],
+        'chicken-liver' => ['name_bn' => 'মুরগির কলিজা', 'aliases' => ['murgir kolija', 'chicken livers']],
+        'beef' => ['name_bn' => 'গরুর মাংস', 'aliases' => ['beef meat', 'gorur mangsho', 'stewing beef', 'beef chuck']],
+        'beef-mince' => ['name_bn' => 'গরুর কিমা', 'aliases' => ['minced beef', 'ground beef', 'beef keema', 'gorur kima']],
+        'beef-shank' => ['name_bn' => 'গরুর নলি', 'aliases' => ['shank', 'nihari meat', 'nalli']],
+        'mutton' => ['name_bn' => 'খাসির মাংস', 'aliases' => ['goat meat', 'lamb', 'khashir mangsho', 'khasir mangsho']],
+        'hilsa' => ['name_bn' => 'ইলিশ মাছ', 'aliases' => ['ilish', 'ilish mach', 'hilsa fish']],
+        'rohu' => ['name_bn' => 'রুই মাছ', 'aliases' => ['rui', 'rui fish', 'rui mach', 'rui machh', 'rohu fish']],
+        'katla-fish' => ['name_bn' => 'কাতলা মাছ', 'aliases' => ['katla', 'catla', 'katol']],
+        'pabda-fish' => ['name_bn' => 'পাবদা মাছ', 'aliases' => ['pabda']],
+        'tengra-fish' => ['name_bn' => 'টেংরা মাছ', 'aliases' => ['tengra']],
+        'boal-fish' => ['name_bn' => 'বোয়াল মাছ', 'aliases' => ['boal']],
+        'pangasius-fish' => ['name_bn' => 'পাঙ্গাশ মাছ', 'aliases' => ['pangash', 'pangas', 'basa']],
+        'climbing-perch' => ['name_bn' => 'কই মাছ', 'aliases' => ['koi', 'koi fish', 'koi mach']],
+        'dried-fish' => ['name_bn' => 'শুঁটকি', 'aliases' => ['shutki', 'shutki mach', 'dried fish flakes']],
+        'prawn' => ['name_bn' => 'চিংড়ি', 'aliases' => ['prawns', 'shrimp', 'chingri', 'chingri mach']],
+        'egg' => ['name_bn' => 'ডিম', 'aliases' => ['eggs', 'dim']],
+        'rice' => ['name_bn' => 'চাল', 'aliases' => ['plain rice', 'white rice', 'chaal']],
+        'basmati-rice' => ['name_bn' => 'বাসমতি চাল', 'aliases' => ['basmati', 'polao rice', 'pulao rice']],
+        'gobindobhog-rice' => ['name_bn' => 'গোবিন্দভোগ চাল', 'aliases' => ['gobindobhog', 'chinigura rice', 'chinigura', 'kalijira rice']],
+        'masoor-dal' => ['name_bn' => 'মসুর ডাল', 'aliases' => ['red lentil', 'red lentils', 'musur dal', 'dal']],
+        'moong-dal' => ['name_bn' => 'মুগ ডাল', 'aliases' => ['mung dal', 'mug dal', 'moong lentil', 'yellow moong dal', 'split moong dal']],
+        'chana-dal' => ['name_bn' => 'ছোলার ডাল', 'aliases' => ['cholar dal', 'bengal gram', 'split chickpea']],
+        'besan' => ['name_bn' => 'বেসন', 'aliases' => ['gram flour', 'chickpea flour']],
+        'all-purpose-flour' => ['name_bn' => 'ময়দা', 'aliases' => ['plain flour', 'maida']],
+        'wheat-flour' => ['name_bn' => 'আটা', 'aliases' => ['atta', 'whole wheat flour']],
+        'rice-flour' => ['name_bn' => 'চালের গুঁড়া', 'aliases' => ['chaler guro']],
+        'semolina' => ['name_bn' => 'সুজি', 'aliases' => ['suji', 'sooji', 'rava']],
+        'vermicelli' => ['name_bn' => 'সেমাই', 'aliases' => ['semai', 'shemai', 'fine vermicelli', 'vermicelli noodles']],
+        'milk' => ['name_bn' => 'দুধ', 'aliases' => ['whole milk', 'full-fat milk', 'full cream milk', 'dudh']],
+        'yogurt' => ['name_bn' => 'দই', 'aliases' => ['plain yogurt', 'yoghurt', 'curd', 'doi', 'tok doi']],
+        'ghee' => ['name_bn' => 'ঘি', 'aliases' => ['clarified butter', 'ghi']],
+        'mustard-oil' => ['name_bn' => 'সরিষার তেল', 'aliases' => ['shorsher tel', 'shorshe tel', 'mustard seed oil']],
+        'oil' => ['name_bn' => 'তেল', 'aliases' => ['cooking oil', 'vegetable oil', 'soybean oil', 'soyabean oil', 'canola oil', 'sunflower oil', 'shonapathi tel']],
+        'coconut-milk' => ['name_bn' => 'নারিকেলের দুধ', 'aliases' => ['narikel dudh']],
+        'coconut-paste' => ['name_bn' => 'নারিকেল বাটা', 'aliases' => ['grated coconut', 'narikel bata']],
+        'cashew-nut' => ['name_bn' => 'কাজু বাদাম', 'aliases' => ['cashew', 'cashews', 'cashew nuts', 'kaju', 'kaju badam']],
+        'cashew-nut-paste' => ['name_bn' => 'কাজু বাটা', 'aliases' => ['cashew paste', 'kaju bata']],
+        'pistachio' => ['name_bn' => 'পেস্তা বাদাম', 'aliases' => ['pistachios', 'pesta badam']],
+        'raisin' => ['name_bn' => 'কিশমিশ', 'aliases' => ['raisins', 'sultanas', 'kishmish']],
+        'kewra-water' => ['name_bn' => 'কেওড়া জল', 'aliases' => ['kewra', 'keora water', 'kewra essence', 'pandanus water']],
+        'rose-water' => ['name_bn' => 'গোলাপ জল', 'aliases' => ['golap jol']],
+        'soy-sauce' => ['name_bn' => 'সয়া সস', 'aliases' => ['soya sauce']],
+        'food-color' => ['name_bn' => 'ফুড কালার', 'aliases' => ['food colour', 'food coloring']],
+        'water' => ['name_bn' => 'পানি', 'aliases' => ['cold water', 'pani', 'jol']],
+        'hot-water' => ['name_bn' => 'গরম পানি', 'aliases' => ['warm water', 'boiling water', 'gorom pani']],
+        'oil-for-frying' => ['aliases' => ['frying oil', 'oil for deep frying']],
+    ];
+
     public function run(): void
     {
-        foreach ($this->dictionary() as $canonical => $info) {
+        foreach ($this->dictionary() as $entry) {
             $ingredient = Ingredient::updateOrCreate(
-                ['canonical_name' => $canonical],
+                ['canonical_name' => $entry['canonical_name']],
                 [
-                    'default_dimension' => $info['dimension'],
-                    'name_bn' => $info['name_bn'],
-                    'preferred_unit' => $info['preferred_unit'],
-                    'is_shoppable' => $info['is_shoppable'] ?? true,
+                    'default_dimension' => $entry['dimension'],
+                    'name_bn' => $entry['name_bn'],
+                    'preferred_unit' => $entry['preferred_unit'],
+                    'is_shoppable' => $entry['is_shoppable'],
                 ]
             );
 
-            foreach ($info['aliases'] as $alias) {
+            foreach ($entry['aliases'] as $alias) {
                 /**
                  * updateOrCreate rather than firstOrCreate: an alias that has
-                 * moved to a better home — "chicken" no longer meaning chicken
-                 * breast — has to follow the dictionary, not the old row.
+                 * moved to a better home — "chicken breast" now meaning
+                 * chicken — has to follow the dictionary, not the old row.
                  */
                 IngredientAlias::updateOrCreate(
                     ['alias' => $alias],
@@ -54,340 +157,67 @@ class IngredientSeeder extends Seeder
     }
 
     /**
-     * @return array<string, array{
-     *     dimension: UnitDimension,
-     *     name_bn: ?string,
-     *     preferred_unit: ?string,
-     *     aliases: list<string>,
-     *     is_shoppable?: bool,
-     * }>
+     * The dataset's ingredients, with the overlay's vocabulary folded in.
+     *
+     * @return array<int, array{canonical_name: string, dimension: UnitDimension, name_bn: ?string, preferred_unit: string, is_shoppable: bool, aliases: array<int, string>}>
      */
     private function dictionary(): array
     {
-        return [
-            // Vegetables and fresh produce. Weighed, not counted: the dataset
-            // says "400 g potato, 3 medium", and the household count lives on
-            // the recipe row as a note.
-            'onion' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'পেঁয়াজ',
-                'preferred_unit' => 'g',
-                'aliases' => ['onions', 'peyaj', 'pyaj', 'red onion', 'brown onion', 'yellow onion'],
-            ],
-            'garlic' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'রসুন',
-                'preferred_unit' => 'g',
-                'aliases' => ['garlic clove', 'garlic cloves', 'garlic paste', 'roshun', 'rasun'],
-            ],
-            'ginger' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'আদা',
-                'preferred_unit' => 'g',
-                'aliases' => ['fresh ginger', 'ginger paste', 'ada', 'adrak'],
-            ],
-            'potato' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'আলু',
-                'preferred_unit' => 'g',
-                'aliases' => ['potatoes', 'alu', 'aloo'],
-            ],
-            'tomato' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'টমেটো',
-                'preferred_unit' => 'g',
-                'aliases' => ['tomatoes', 'fresh tomato', 'tometo'],
-            ],
-            'eggplant' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'বেগুন',
-                'preferred_unit' => 'g',
-                'aliases' => ['aubergine', 'brinjal', 'begun'],
-            ],
-            'cauliflower' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ফুলকপি',
-                'preferred_unit' => 'g',
-                'aliases' => ['cauliflower florets', 'phulkopi', 'fulkopi'],
-            ],
-            'green peas' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মটরশুঁটি',
-                'preferred_unit' => 'g',
-                'aliases' => ['peas', 'green pea', 'motorshuti', 'matarshuti'],
-            ],
-            'coriander' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ধনেপাতা',
-                'preferred_unit' => 'g',
-                'aliases' => ['cilantro', 'fresh coriander', 'coriander leaves', 'dhania', 'dhone pata'],
-            ],
-            'scallion' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'পেঁয়াজ পাতা',
-                'preferred_unit' => 'piece',
-                'aliases' => ['scallions', 'spring onion', 'spring onions', 'green onion'],
-            ],
+        $path = database_path(self::DATA_FILE);
+        $json = file_get_contents($path);
 
-            // Chilies. Three separate purchases, however alike the names look.
-            'chili' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'কাঁচা মরিচ',
-                'preferred_unit' => 'piece',
-                'aliases' => ['chillies', 'chilies', 'green chili', 'green chilli', 'morich', 'kacha morich'],
-            ],
-            'dried red chili' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'শুকনা মরিচ',
-                'preferred_unit' => 'piece',
-                'aliases' => ['dried red chilli', 'dry red chili', 'dried chili', 'shukna morich', 'shukno morich'],
-            ],
-            'chili powder' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মরিচ গুঁড়া',
-                'preferred_unit' => 'g',
-                'aliases' => ['red chili powder', 'morich gura', 'lal morich'],
-            ],
+        if ($json === false) {
+            throw new RuntimeException("Could not read the recipe data file at {$path}.");
+        }
 
-            // Ground spices and the whole garam masala spices.
-            'turmeric' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'হলুদ',
-                'preferred_unit' => 'g',
-                'aliases' => ['turmeric powder', 'ground turmeric', 'holud', 'haldi'],
-            ],
-            'cumin' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'জিরা',
-                'preferred_unit' => 'g',
-                'aliases' => ['ground cumin', 'cumin powder', 'cumin seed', 'cumin seeds', 'jeera', 'jira'],
-            ],
-            'coriander powder' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ধনে গুঁড়া',
-                'preferred_unit' => 'g',
-                'aliases' => ['ground coriander', 'dhone gura'],
-            ],
-            'garam masala' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'গরম মসলা',
-                'preferred_unit' => 'g',
-                'aliases' => ['garam masala powder', 'allspice blend', 'gorom moshla'],
-            ],
-            'black pepper' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'গোলমরিচ',
-                'preferred_unit' => 'g',
-                'aliases' => ['black pepper powder', 'ground black pepper', 'pepper', 'golmorich', 'gol morich'],
-            ],
-            'bay leaf' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'তেজপাতা',
-                'preferred_unit' => 'piece',
-                'aliases' => ['bay leaves', 'tejpata', 'tej pata'],
-            ],
-            'cinnamon' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'দারুচিনি',
-                'preferred_unit' => 'piece',
-                'aliases' => ['cinnamon stick', 'cinnamon sticks', 'daruchini', 'darchini'],
-            ],
-            'green cardamom' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'এলাচ',
-                'preferred_unit' => 'piece',
-                'aliases' => ['cardamom', 'cardamom pod', 'cardamom pods', 'elach', 'elachi', 'choto elach'],
-            ],
-            'clove' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'লবঙ্গ',
-                'preferred_unit' => 'piece',
-                'aliases' => ['cloves', 'lobongo', 'laung'],
-            ],
-            'nigella' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'কালোজিরা',
-                'preferred_unit' => 'g',
-                'aliases' => ['nigella seed', 'nigella seeds', 'kalojira', 'kalonji', 'black cumin'],
-            ],
-            'panch phoron' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'পাঁচফোড়ন',
-                'preferred_unit' => 'g',
-                'aliases' => ['panchforon', 'bengali five spice', 'five spice'],
-            ],
-            'poppy seed' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'পোস্ত',
-                'preferred_unit' => 'g',
-                'aliases' => ['poppy seeds', 'poppy seed paste', 'posto', 'khus khus'],
-            ],
-            'salt' => [
-                /**
-                 * None on purpose: "salt to taste" is the common line, and a
-                 * line with no unit should stay off the shopping list rather
-                 * than merge into an invented amount. Rows that do give grams
-                 * still merge by mass, because the row's unit decides.
-                 */
-                'dimension' => UnitDimension::None,
-                'name_bn' => 'লবণ',
-                'preferred_unit' => 'g',
-                'aliases' => ['table salt', 'sea salt', 'lobon', 'noon'],
-            ],
-            'sugar' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'চিনি',
-                'preferred_unit' => 'g',
-                'aliases' => ['granulated sugar', 'white sugar', 'chini'],
-            ],
+        /** @var array{ingredients: array<int, array{slug: string, name: string, is_shoppable: bool, default_unit: string}>} $data */
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
-            // Meat and fish.
-            'chicken' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মুরগির মাংস',
-                'preferred_unit' => 'g',
-                'aliases' => ['whole chicken', 'chicken curry cut', 'chicken leg quarter', 'chicken leg quarters', 'murgir mangsho'],
-            ],
-            'chicken breast' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মুরগির বুকের মাংস',
-                'preferred_unit' => 'g',
-                'aliases' => ['chicken breasts', 'boneless chicken', 'murgir buker mangsho'],
-            ],
-            'beef' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'গরুর মাংস',
-                'preferred_unit' => 'g',
-                'aliases' => ['beef meat', 'gorur mangsho', 'stewing beef', 'beef chuck'],
-            ],
-            'ilish' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ইলিশ মাছ',
-                'preferred_unit' => 'g',
-                'aliases' => ['hilsa', 'hilsa fish', 'ilish mach'],
-            ],
-            'rui fish' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'রুই মাছ',
-                'preferred_unit' => 'g',
-                'aliases' => ['rui', 'rui mach', 'rui machh', 'rui fish steaks', 'rohu', 'rohu fish'],
-            ],
-            'egg' => [
-                'dimension' => UnitDimension::Count,
-                'name_bn' => 'ডিম',
-                'preferred_unit' => 'piece',
-                'aliases' => ['eggs', 'dim'],
-            ],
+        $entries = [];
+        $canonicalNames = [];
 
-            // Rice, dal and flour.
-            'aromatic rice' => [
-                /**
-                 * Its own row rather than an alias of basmati: nobody cooking
-                 * polao in Dhaka comes home with basmati.
-                 */
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'পোলাওয়ের চাল',
-                'preferred_unit' => 'g',
-                'aliases' => ['polao rice', 'pulao rice', 'aromatic polao rice', 'chinigura rice', 'chinigura', 'kalijira rice', 'shugandhi chal'],
-            ],
-            'basmati rice' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'বাসমতি চাল',
-                'preferred_unit' => 'g',
-                'aliases' => ['rice', 'basmati', 'chaal'],
-            ],
-            'red lentil' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মসুর ডাল',
-                'preferred_unit' => 'g',
-                'aliases' => ['red lentils', 'masoor dal', 'musur dal', 'dal'],
-            ],
-            'moong dal' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'মুগ ডাল',
-                'preferred_unit' => 'g',
-                'aliases' => ['mung dal', 'mug dal', 'moong lentil', 'yellow moong dal', 'split moong dal'],
-            ],
-            'vermicelli' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'সেমাই',
-                'preferred_unit' => 'g',
-                'aliases' => ['semai', 'shemai', 'fine vermicelli', 'vermicelli noodles'],
-            ],
-            'flour' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ময়দা',
-                'preferred_unit' => 'g',
-                'aliases' => ['all-purpose flour', 'plain flour', 'maida', 'atta'],
-            ],
+        foreach ($data['ingredients'] as $ingredient) {
+            $canonical = mb_strtolower($ingredient['name']);
+            $canonicalNames[$canonical] = true;
 
-            // Dairy and fats.
-            'milk' => [
-                'dimension' => UnitDimension::Volume,
-                'name_bn' => 'দুধ',
-                'preferred_unit' => 'ml',
-                'aliases' => ['whole milk', 'full-fat milk', 'full cream milk', 'dudh'],
-            ],
-            'milk powder' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'গুঁড়া দুধ',
-                'preferred_unit' => 'g',
-                'aliases' => ['powdered milk', 'dry milk', 'guro dudh'],
-            ],
-            'yogurt' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'দই',
-                'preferred_unit' => 'g',
-                'aliases' => ['plain yogurt', 'yoghurt', 'curd', 'doi', 'tok doi'],
-            ],
-            'ghee' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'ঘি',
-                'preferred_unit' => 'g',
-                'aliases' => ['clarified butter', 'ghi'],
-            ],
-            'mustard oil' => [
-                'dimension' => UnitDimension::Volume,
-                'name_bn' => 'সরিষার তেল',
-                'preferred_unit' => 'ml',
-                'aliases' => ['shorsher tel', 'shorshe tel', 'mustard seed oil'],
-            ],
-            'vegetable oil' => [
-                'dimension' => UnitDimension::Volume,
-                'name_bn' => 'সয়াবিন তেল',
-                'preferred_unit' => 'ml',
-                'aliases' => ['cooking oil', 'oil', 'soybean oil', 'soyabean oil', 'canola oil', 'sunflower oil', 'shonapathi tel'],
-            ],
+            $overlay = self::OVERLAY[$ingredient['slug']] ?? [];
 
-            // Nuts, dried fruit and the finishing touches.
-            'cashew' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'কাজু বাদাম',
-                'preferred_unit' => 'g',
-                'aliases' => ['cashews', 'cashew nut', 'cashew nuts', 'cashew paste', 'kaju', 'kaju badam'],
-            ],
-            'raisin' => [
-                'dimension' => UnitDimension::Mass,
-                'name_bn' => 'কিশমিশ',
-                'preferred_unit' => 'g',
-                'aliases' => ['raisins', 'sultanas', 'kishmish'],
-            ],
-            'kewra water' => [
-                'dimension' => UnitDimension::Volume,
-                'name_bn' => 'কেওড়া জল',
-                'preferred_unit' => 'ml',
-                'aliases' => ['kewra', 'keora water', 'kewra essence', 'pandanus water'],
-            ],
+            $entries[] = [
+                'canonical_name' => $canonical,
+                'dimension' => $this->dimensionOf($ingredient['default_unit']),
+                'name_bn' => $overlay['name_bn'] ?? null,
+                'preferred_unit' => $ingredient['default_unit'],
+                'is_shoppable' => $ingredient['is_shoppable'],
+                'aliases' => $overlay['aliases'] ?? [],
+            ];
+        }
 
-            // Real, needed by the method, scaled with the dish — and never
-            // bought. is_shoppable is what keeps it off the list.
-            'water' => [
-                'dimension' => UnitDimension::Volume,
-                'name_bn' => 'পানি',
-                'preferred_unit' => 'ml',
-                'is_shoppable' => false,
-                'aliases' => ['hot water', 'warm water', 'cold water', 'boiling water', 'pani', 'jol'],
-            ],
-        ];
+        /**
+         * An alias that is also somebody's canonical name would shadow a real
+         * entry: "coriander" pointing at fresh coriander is fine, "rice"
+         * pointing at basmati is not, because rice is its own row.
+         */
+        foreach ($entries as $entry) {
+            foreach ($entry['aliases'] as $alias) {
+                if (isset($canonicalNames[$alias])) {
+                    throw new RuntimeException("The alias \"{$alias}\" on {$entry['canonical_name']} is also a canonical ingredient. Drop the alias, or point the recipes at the entry it shadows.");
+                }
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * The dimension a thing is usually measured in, read off the unit the
+     * dataset prefers for it.
+     */
+    private function dimensionOf(string $unit): UnitDimension
+    {
+        return match ($unit) {
+            'g', 'kg' => UnitDimension::Mass,
+            'ml', 'l' => UnitDimension::Volume,
+            default => UnitDimension::Count,
+        };
     }
 }
