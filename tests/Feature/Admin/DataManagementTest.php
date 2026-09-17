@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Filament\Resources\Ingredients\IngredientResource;
 use App\Filament\Resources\Ingredients\Pages\ListIngredients;
 use App\Filament\Resources\Recipes\Pages\ListRecipes;
@@ -16,7 +17,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->create(['role' => UserRole::Admin]);
 });
 
 test('an ordinary cook cannot reach the ingredient dictionary', function () {

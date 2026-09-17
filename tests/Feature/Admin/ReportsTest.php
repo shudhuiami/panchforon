@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Filament\Pages\Reports;
 use App\Filament\Pages\SiteSettings;
 use App\Filament\Resources\ContentBlocks\ContentBlockResource;
@@ -24,13 +25,13 @@ test('an ordinary cook cannot reach the reports', function () {
 });
 
 test('a suspended admin cannot reach the reports', function () {
-    $suspended = User::factory()->create(['is_admin' => true, 'suspended_at' => now(), 'suspension_reason' => 'Abuse']);
+    $suspended = User::factory()->create(['role' => UserRole::Admin, 'suspended_at' => now(), 'suspension_reason' => 'Abuse']);
 
     $this->actingAs($suspended)->get(Reports::getUrl())->assertForbidden();
 });
 
 test('an admin can open the reports', function () {
-    $this->actingAs(User::factory()->create(['is_admin' => true]))->get(Reports::getUrl())->assertOk();
+    $this->actingAs(User::factory()->create(['role' => UserRole::Admin]))->get(Reports::getUrl())->assertOk();
 });
 
 test('the weekly figures count each record in the week it happened', function () {
@@ -84,7 +85,7 @@ test('best rated lists only recipes that have been rated', function () {
     $unrated = Recipe::factory()->create(['title' => 'Nobody Has Cooked This']);
     RecipeStat::factory()->create(['recipe_id' => $unrated->id, 'ratings_count' => 0]);
 
-    Livewire::actingAs(User::factory()->create(['is_admin' => true]))
+    Livewire::actingAs(User::factory()->create(['role' => UserRole::Admin]))
         ->test(TopRecipes::class)
         ->assertCanSeeTableRecords([$rated])
         ->assertCanNotSeeTableRecords([$unrated]);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Database\Seeders\AdminUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,7 +13,7 @@ test('seeding creates an admin that can reach the panel', function () {
 
     $admin = User::query()->where('email', config('admin.seed_email'))->sole();
 
-    expect($admin->is_admin)->toBeTrue()
+    expect($admin->role)->toBe(UserRole::Admin)
         ->and($admin->isSuspended())->toBeFalse();
 
     $this->actingAs($admin)->get('/admin')->assertSuccessful();
@@ -40,7 +41,7 @@ test('seeding promotes an existing account rather than duplicating it', function
 
     $existing->refresh();
 
-    expect($existing->is_admin)->toBeTrue()
+    expect($existing->role)->toBe(UserRole::Admin)
         ->and($existing->name)->toBe('Already Registered')
         ->and(User::query()->count())->toBe(1);
 });
@@ -53,5 +54,5 @@ test('seeding lifts a suspension on the seeded admin account', function () {
     $admin = User::query()->where('email', config('admin.seed_email'))->sole();
 
     expect($admin->isSuspended())->toBeFalse()
-        ->and($admin->is_admin)->toBeTrue();
+        ->and($admin->role)->toBe(UserRole::Admin);
 });

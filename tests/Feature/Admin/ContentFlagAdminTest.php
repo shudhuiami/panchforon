@@ -2,6 +2,7 @@
 
 use App\Enums\FlagStatus;
 use App\Enums\ModerationStatus;
+use App\Enums\UserRole;
 use App\Filament\Resources\ContentFlags\ContentFlagResource;
 use App\Filament\Resources\ContentFlags\Pages\ListContentFlags;
 use App\Models\ContentFlag;
@@ -13,7 +14,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->create(['role' => UserRole::Admin]);
 });
 
 test('an ordinary cook cannot reach the report queue', function () {
@@ -23,7 +24,7 @@ test('an ordinary cook cannot reach the report queue', function () {
 });
 
 test('a suspended admin cannot reach the report queue', function () {
-    $suspended = User::factory()->create(['is_admin' => true, 'suspended_at' => now(), 'suspension_reason' => 'Abuse']);
+    $suspended = User::factory()->create(['role' => UserRole::Admin, 'suspended_at' => now(), 'suspension_reason' => 'Abuse']);
 
     $this->actingAs($suspended)
         ->get(ContentFlagResource::getUrl('index'))
