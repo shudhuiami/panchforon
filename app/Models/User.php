@@ -228,4 +228,25 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(MealPlan::class)->where('is_active', true);
     }
+
+    /**
+     * Every time this cook has asked to be made a creator, declines included.
+     *
+     * @return HasMany<CreatorApplication, $this>
+     */
+    public function creatorApplications(): HasMany
+    {
+        return $this->hasMany(CreatorApplication::class);
+    }
+
+    /**
+     * The attempt that counts: whether they are waiting on a decision, and
+     * what the last one was.
+     *
+     * @return HasOne<CreatorApplication, $this>
+     */
+    public function latestCreatorApplication(): HasOne
+    {
+        return $this->hasOne(CreatorApplication::class)->latestOfMany();
+    }
 }
