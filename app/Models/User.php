@@ -18,7 +18,6 @@ use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property UserRole $role
- * @property bool $is_admin
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $suspended_at
  * @property string|null $suspension_reason
@@ -38,7 +37,6 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
-        'is_admin',
         'suspended_at',
         'suspension_reason',
         'youtube_channel_id',
@@ -79,31 +77,8 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
-            'is_admin' => 'boolean',
             'suspended_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Keeps role and is_admin agreeing while both columns exist.
-     *
-     * The role column is the one being kept; is_admin is dropped once every
-     * reader has moved off it. Until then either can be written — the admin
-     * panel still toggles the boolean, while new code sets the role — so
-     * whichever one changed decides the other. Delete this hook, and the
-     * column, in the same change.
-     */
-    protected static function booted(): void
-    {
-        static::saving(function (User $user): void {
-            if ($user->isDirty('is_admin') && ! $user->isDirty('role')) {
-                $user->role = $user->is_admin ? UserRole::Admin : UserRole::Member;
-
-                return;
-            }
-
-            $user->is_admin = $user->role === UserRole::Admin;
-        });
     }
 
     public function isAdmin(): bool

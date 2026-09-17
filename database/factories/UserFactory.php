@@ -46,15 +46,10 @@ class UserFactory extends Factory
 
     /**
      * Indicate that the user may reach the Filament admin panel.
-     *
-     * Both columns are set while both exist: is_admin is still what the
-     * application reads, and role is what it will read, so a factory that set
-     * only one of them would build a user the backfill would never produce.
      */
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_admin' => true,
             'role' => UserRole::Admin,
         ]);
     }

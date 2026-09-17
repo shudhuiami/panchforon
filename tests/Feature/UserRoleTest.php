@@ -15,14 +15,15 @@ test('a new account is a member until someone says otherwise', function () {
     ]);
 });
 
-test('the admin factory state marks the account admin both ways', function () {
+test('the admin factory state produces an admin', function () {
     $user = User::factory()->admin()->create();
 
-    expect($user->is_admin)->toBeTrue();
+    expect($user->role)->toBe(UserRole::Admin)
+        ->and($user->isAdmin())->toBeTrue()
+        ->and($user->isCreator())->toBeTrue('an admin may do anything a creator may');
 
     $this->assertDatabaseHas('users', [
         'id' => $user->id,
-        'is_admin' => true,
         'role' => UserRole::Admin->value,
     ]);
 });
@@ -30,42 +31,32 @@ test('the admin factory state marks the account admin both ways', function () {
 test('the creator factory state makes a creator and nothing more', function () {
     $user = User::factory()->creator()->create();
 
-    expect($user->is_admin)->toBeFalse();
+    expect($user->role)->toBe(UserRole::Creator)
+        ->and($user->isCreator())->toBeTrue()
+        ->and($user->isAdmin())->toBeFalse()
+        ->and($user->isActiveAdmin())->toBeFalse();
 
     $this->assertDatabaseHas('users', [
         'id' => $user->id,
-        'is_admin' => false,
         'role' => UserRole::Creator->value,
     ]);
 });
 
-/**
- * The migration reads is_admin to decide role, so an account the application
- * still makes an admin the old way has to come out carrying the admin role.
- * This is the contract chunk 3 leans on before it drops is_admin altogether.
- */
-test('a user made an admin through is_admin comes out with the admin role', function () {
-    $user = User::factory()->create(['is_admin' => true]);
-
-    $this->assertDatabaseHas('users', [
-        'id' => $user->id,
-        'is_admin' => true,
-        'role' => UserRole::Admin->value,
-    ]);
+test('a model that has never seen the database still has a role', function () {
+    /**
+     * The column default only applies on insert, so without the model's own
+     * default this would be null and the first predicate to ask it anything
+     * would fail.
+     */
+    expect(User::factory()->make()->role)->toBe(UserRole::Member);
 });
 
-test('no user is an admin by one column and not the other', function () {
-    User::factory()->admin()->create();
-    User::factory()->creator()->create();
-    User::factory()->count(2)->create();
+test('suspension outranks the role', function () {
+    $suspended = User::factory()->creator()->suspended()->create();
 
-    $disagreeing = User::query()
-        ->where('is_admin', true)
-        ->where('role', '!=', UserRole::Admin->value)
-        ->count();
-
-    expect($disagreeing)->toBe(0)
-        ->and(User::query()->where('role', UserRole::Admin->value)->count())->toBe(1);
+    expect($suspended->isCreator())->toBeTrue('the role itself is unchanged')
+        ->and($suspended->canPublishWithoutReview())->toBeFalse()
+        ->and(User::factory()->admin()->suspended()->create()->isActiveAdmin())->toBeFalse();
 });
 
 test('only creators and admins publish without review', function () {
