@@ -22,3 +22,9 @@ Seed the row with a factory and drive Livewire, or exercise the endpoint in its 
 
 ## Larastan reads an attribute's type from $fillable unless a @property says otherwise
 A `casts()` entry is invisible to it. A model with `'reviewed_at' => 'datetime'` in `casts()` but no `@property Carbon|null $reviewed_at` is read as `string`, and any `->format()` on it is a level-6 error. Document every cast attribute with a `@property` line — the other models in this app already do, which is why they pass.
+
+## Filament modal contents are not in the component's rendered HTML
+`assertSee` on a Livewire component will not find anything inside a mounted action's modal. Use `assertMountedActionModalSee` / `assertMountedActionModalSeeHtml`. A form-component action is addressed as `TestAction::make('name')->schemaComponent('field_name')`, and a nested action needs its wrapping `Actions` component to carry an explicit `->key()`.
+
+## A Filament hidden field bound to an array arrives back as "[object Object]"
+The browser stringifies it. Keep hidden state scalar — the studio's video picker pages through YouTube by storing a space-joined string of page tokens rather than an array of them.
