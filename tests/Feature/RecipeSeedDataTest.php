@@ -288,3 +288,24 @@ test('the demo cook still has an account, a week of meals and a shopping list', 
 
     expect(Rating::query()->where('user_id', $demoUser->id)->count())->toBeGreaterThan(0);
 });
+
+test('the demo cook can actually post the catalogue they are credited with', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $demo = User::query()->where('email', 'demo@panchforon.com')->sole();
+
+    /**
+     * Every seeded recipe is theirs, and only a creator may post. A member
+     * owning eighty published recipes would be a state the application does
+     * not allow anyone to reach.
+     */
+    expect($demo->isCreator())->toBeTrue()
+        ->and($demo->canPublishWithoutReview())->toBeTrue()
+        ->and(Recipe::query()->where('user_id', $demo->id)->count())->toBeGreaterThan(70);
+
+    $this->actingAs($demo)->postJson('/api/recipes', [
+        'title' => 'A dish the demo cook writes today',
+        'instructions' => 'Cook it.',
+        'ingredients' => [['name' => 'onion', 'quantity' => 100, 'unit' => 'g']],
+    ])->assertCreated()->assertJsonPath('data.moderation_status', 'approved');
+});
