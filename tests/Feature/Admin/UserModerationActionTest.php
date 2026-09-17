@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
@@ -68,14 +69,38 @@ test('an admin can grant and revoke admin access', function () {
     $this->actingAs($admin);
 
     Livewire::test(ListUsers::class)
-        ->callAction(TestAction::make('toggleAdmin')->table($member));
+        ->callAction(TestAction::make('changeRole')->table($member), ['role' => UserRole::Admin->value])
+        ->assertHasNoActionErrors();
 
-    expect($member->fresh()->is_admin)->toBeTrue();
+    expect($member->fresh()->role)->toBe(UserRole::Admin);
 
     Livewire::test(ListUsers::class)
-        ->callAction(TestAction::make('toggleAdmin')->table($member->fresh()));
+        ->callAction(TestAction::make('changeRole')->table($member->fresh()), ['role' => UserRole::Member->value])
+        ->assertHasNoActionErrors();
 
-    expect($member->fresh()->is_admin)->toBeFalse();
+    expect($member->fresh()->role)->toBe(UserRole::Member);
+});
+
+/**
+ * The second of the two ways into the creator role: an admin hands it over
+ * directly, rather than the applicant asking for it. It is not a halfway house
+ * to admin, so the panel stays shut.
+ */
+test('an admin can grant the creator role directly', function () {
+    $admin = User::factory()->admin()->create();
+    $member = User::factory()->create();
+
+    $this->actingAs($admin);
+
+    Livewire::test(ListUsers::class)
+        ->callAction(TestAction::make('changeRole')->table($member), ['role' => UserRole::Creator->value])
+        ->assertHasNoActionErrors();
+
+    $member->refresh();
+
+    expect($member->role)->toBe(UserRole::Creator)
+        ->and($member->isCreator())->toBeTrue()
+        ->and($member->isAdmin())->toBeFalse();
 });
 
 test('an admin cannot suspend or demote their own account', function () {
@@ -85,11 +110,11 @@ test('an admin cannot suspend or demote their own account', function () {
 
     Livewire::test(ListUsers::class)
         ->assertActionHidden(TestAction::make('suspend')->table($admin))
-        ->assertActionHidden(TestAction::make('toggleAdmin')->table($admin));
+        ->assertActionHidden(TestAction::make('changeRole')->table($admin));
 
     $admin->refresh();
 
-    expect($admin->is_admin)->toBeTrue()
+    expect($admin->role)->toBe(UserRole::Admin)
         ->and($admin->isSuspended())->toBeFalse();
 });
 
@@ -126,8 +151,13 @@ test('a non-admin calling a user action changes nothing', function () {
         ['suspension_reason' => 'I should not be able to do this'],
     ), report: false);
 
+    rescue(fn () => Livewire::test(ListUsers::class)->callAction(
+        TestAction::make('changeRole')->table($victim),
+        ['role' => UserRole::Admin->value],
+    ), report: false);
+
     expect($victim->fresh()->isSuspended())->toBeFalse()
-        ->and($victim->fresh()->is_admin)->toBeFalse();
+        ->and($victim->fresh()->role)->toBe(UserRole::Member);
 });
 
 test('a suspended admin is refused the user list component', function () {
@@ -147,7 +177,13 @@ test('a suspended admin calling a user action changes nothing', function () {
         ['suspension_reason' => 'Still should not work'],
     ), report: false);
 
-    expect($victim->fresh()->isSuspended())->toBeFalse();
+    rescue(fn () => Livewire::test(ListUsers::class)->callAction(
+        TestAction::make('changeRole')->table($victim),
+        ['role' => UserRole::Admin->value],
+    ), report: false);
+
+    expect($victim->fresh()->isSuspended())->toBeFalse()
+        ->and($victim->fresh()->role)->toBe(UserRole::Member);
 });
 
 test('the policy refuses non-admins and self-moderation', function () {

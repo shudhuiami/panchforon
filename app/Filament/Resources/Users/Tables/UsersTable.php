@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Enums\UserRole;
 use App\Filament\Actions\UserModerationActions;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,11 +32,11 @@ class UsersTable
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('is_admin')
+                TextColumn::make('role')
                     ->label('Role')
                     ->badge()
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Admin' : 'Member')
-                    ->color(fn (bool $state): string => $state ? 'primary' : 'gray')
+                    ->formatStateUsing(fn (UserRole $state): string => $state->label())
+                    ->color(fn (UserRole $state): string => $state->color())
                     ->sortable()
                     ->visibleFrom('md'),
 
@@ -73,11 +75,11 @@ class UsersTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                TernaryFilter::make('is_admin')
+                SelectFilter::make('role')
                     ->label('Role')
-                    ->placeholder('Everyone')
-                    ->trueLabel('Admins only')
-                    ->falseLabel('Members only'),
+                    ->options(collect(UserRole::cases())
+                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->label()])
+                        ->all()),
 
                 TernaryFilter::make('suspended')
                     ->label('Status')
@@ -94,7 +96,7 @@ class UsersTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    UserModerationActions::toggleAdmin(),
+                    UserModerationActions::changeRole(),
                     UserModerationActions::suspend(),
                     UserModerationActions::liftSuspension(),
                 ]),

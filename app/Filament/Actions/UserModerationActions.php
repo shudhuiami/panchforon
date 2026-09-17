@@ -2,8 +2,10 @@
 
 namespace App\Filament\Actions;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -13,32 +15,48 @@ use Illuminate\Support\Facades\Auth;
  * Record actions for the user resource.
  *
  * Every action refuses to act on the signed-in admin's own account, so nobody
- * can revoke their own panel access or suspend themselves and be locked out.
+ * can demote themselves out of this panel or suspend themselves and be locked
+ * out.
  */
 class UserModerationActions
 {
-    public static function toggleAdmin(): Action
+    /**
+     * Set someone's role outright.
+     *
+     * A toggle could only ever say admin or not, which is no longer what the
+     * role is. Picking from the three cases is also how an admin grants the
+     * creator role by hand, the other route being a creator application.
+     */
+    public static function changeRole(): Action
     {
-        return Action::make('toggleAdmin')
-            ->label(fn (User $record): string => $record->is_admin ? 'Revoke admin' : 'Make admin')
-            ->icon(fn (User $record): Heroicon => $record->is_admin ? Heroicon::OutlinedShieldExclamation : Heroicon::OutlinedShieldCheck)
-            ->color(fn (User $record): string => $record->is_admin ? 'gray' : 'primary')
+        return Action::make('changeRole')
+            ->label('Change role')
+            ->icon(Heroicon::OutlinedShieldCheck)
+            ->color('primary')
             ->authorize('moderate')
-            ->requiresConfirmation()
-            ->modalHeading(fn (User $record): string => $record->is_admin
-                ? "Revoke admin access for {$record->name}?"
-                : "Grant admin access to {$record->name}?")
-            ->modalDescription(fn (User $record): string => $record->is_admin
-                ? 'They will lose access to this panel immediately.'
-                : 'They will be able to reach this panel and moderate content.')
+            ->modalHeading(fn (User $record): string => "Change the role for {$record->name}")
+            ->modalDescription('Creators publish recipes without review and reach the studio. Administrators do that as well as reaching this panel.')
+            ->modalSubmitActionLabel('Change role')
             ->visible(fn (User $record): bool => ! self::isSelf($record))
-            ->action(function (User $record): void {
-                $record->forceFill(['is_admin' => ! $record->is_admin])->save();
+            ->fillForm(fn (User $record): array => ['role' => $record->role->value])
+            ->schema([
+                Select::make('role')
+                    ->label('Role')
+                    ->native(false)
+                    ->required()
+                    ->options(collect(UserRole::cases())
+                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->label()])
+                        ->all()),
+            ])
+            ->action(function (User $record, array $data): void {
+                $role = UserRole::from($data['role']);
+
+                $record->forceFill(['role' => $role])->save();
 
                 Notification::make()
                     ->success()
-                    ->title($record->is_admin ? 'Admin access granted' : 'Admin access revoked')
-                    ->body("{$record->name} is now ".($record->is_admin ? 'an administrator.' : 'a regular member.'))
+                    ->title('Role changed')
+                    ->body("{$record->name} now has the {$role->label()} role.")
                     ->send();
             });
     }

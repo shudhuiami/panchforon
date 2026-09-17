@@ -56,5 +56,5 @@ test('the user resource exposes no credential fields', function () {
         ->not->toContain('remember_token')
         ->toContain('name')
         ->toContain('email')
-        ->toContain('is_admin');
+        ->toContain('role');
 });

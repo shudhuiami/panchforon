@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -32,11 +33,11 @@ class UserInfolist
                 Section::make('Access')
                     ->columns(3)
                     ->schema([
-                        TextEntry::make('is_admin')
+                        TextEntry::make('role')
                             ->label('Role')
                             ->badge()
-                            ->formatStateUsing(fn (bool $state): string => $state ? 'Administrator' : 'Member')
-                            ->color(fn (bool $state): string => $state ? 'primary' : 'gray'),
+                            ->formatStateUsing(fn (UserRole $state): string => $state->label())
+                            ->color(fn (UserRole $state): string => $state->color()),
 
                         TextEntry::make('suspended_at')
                             ->label('Status')
