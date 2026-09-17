@@ -50,6 +50,7 @@ class Recipe extends Model
         'cook_minutes',
         'spice_level',
         'source_url',
+        'youtube_video_id',
     ];
 
     /**

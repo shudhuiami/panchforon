@@ -56,4 +56,21 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | YouTube
+    |--------------------------------------------------------------------------
+    |
+    | A Data API key, which is all that reading a public channel and its
+    | uploads needs — there is no OAuth here and nothing is ever written to
+    | anyone's account. With no key set the integration stays switched off:
+    | no channel resolves, no uploads are listed, and an unconfigured
+    | deployment behaves as though the feature does not exist.
+    |
+    */
+
+    'youtube' => [
+        'key' => env('YOUTUBE_API_KEY'),
+    ],
+
 ];

@@ -41,6 +41,9 @@ class User extends Authenticatable implements FilamentUser
         'is_admin',
         'suspended_at',
         'suspension_reason',
+        'youtube_channel_id',
+        'youtube_channel_handle',
+        'youtube_channel_title',
     ];
 
     /**
