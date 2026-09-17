@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChefHat, ChevronDown, Heart, LogOut, PlusCircle, ShieldCheck, ShoppingBasket, UserRound, type LucideIcon } from 'lucide-react';
+import { ChefHat, ChevronDown, Heart, LayoutDashboard, LogOut, PlusCircle, ShieldCheck, ShoppingBasket, UserRound, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
 import { Sheet } from '../ui/Sheet';
@@ -29,7 +29,7 @@ interface AccountMenuListProps {
  *
  * Only a creator sees "Post a recipe", because only a creator may. A member gets
  * the way in instead, in the same slot, so the menu never offers a door that is
- * locked.
+ * locked. The studio sits behind the same test, for the same reason.
  */
 const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate }) => {
     const { user, logout } = useAuth();
@@ -43,6 +43,9 @@ const AccountMenuList: React.FC<AccountMenuListProps> = ({ onNavigate }) => {
         canPostRecipes
             ? { label: 'Post a recipe', icon: PlusCircle, to: '/recipes/create', tone: 'primary' }
             : { label: 'Become a creator', icon: ChefHat, to: '/become-a-creator', tone: 'primary' },
+        /* The studio is a Filament panel, not a React route, so it needs a real
+           document load rather than a router link. */
+        ...(canPostRecipes ? [{ label: 'Creator studio', icon: LayoutDashboard, href: '/studio' } as MenuItem] : []),
         { label: 'Your account', icon: UserRound, to: '/account' },
         { label: 'Saved recipes', icon: Heart, to: '/saved' },
         { label: 'Shopping list', icon: ShoppingBasket, to: '/shopping-list' },

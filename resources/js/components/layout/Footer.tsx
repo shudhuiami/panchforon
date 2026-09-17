@@ -10,7 +10,9 @@ const linkClass = 'text-sm text-ink-2 transition-colors hover:text-ink';
 /**
  * Every link here goes somewhere real: the About and legal links are the
  * pages an admin has written and marked for the footer, so the column is
- * empty rather than broken when none exist yet.
+ * empty rather than broken when none exist yet. The same rule decides the
+ * account column — a member is offered the application, not the posting form
+ * and the studio they cannot reach.
  */
 export const Footer: React.FC = () => {
     const { user } = useAuth();
@@ -18,6 +20,7 @@ export const Footer: React.FC = () => {
     const block = useContentBlocks();
     const pages = useFooterPages();
     const year = new Date().getFullYear();
+    const canPostRecipes = user?.role === 'creator' || user?.role === 'admin';
 
     return (
         <footer className="mt-16 border-t border-line bg-surface/60">
@@ -49,7 +52,15 @@ export const Footer: React.FC = () => {
                     <ul className="mt-4 space-y-2.5">
                         {user ? (
                             <>
-                                <li><Link to="/recipes/create" className={linkClass}>Post a recipe</Link></li>
+                                {canPostRecipes ? (
+                                    <>
+                                        <li><Link to="/recipes/create" className={linkClass}>Post a recipe</Link></li>
+                                        {/* A Filament panel, so a real document load rather than a router link. */}
+                                        <li><a href="/studio" className={linkClass}>Creator studio</a></li>
+                                    </>
+                                ) : (
+                                    <li><Link to="/become-a-creator" className={linkClass}>Become a creator</Link></li>
+                                )}
                                 {user.is_admin && <li><a href="/admin" className={linkClass}>Admin panel</a></li>}
                             </>
                         ) : (

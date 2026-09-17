@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A member asking to be trusted with the catalogue.
  *
  * @property CreatorApplicationStatus $status
+ * @property Carbon|null $reviewed_at
  */
 class CreatorApplication extends Model
 {

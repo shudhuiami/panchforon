@@ -109,6 +109,7 @@ export interface RecipeList {
     ratings_avg: number | null;
     bayesian_score: number | null;
     created_at?: string;
+    has_video?: boolean;
 }
 
 export interface RecipeDetail {
@@ -131,6 +132,8 @@ export interface RecipeDetail {
     /** prep + cook. Null only when neither time is recorded. */
     total_minutes?: number | null;
     spice_level?: SpiceLevel | null;
+    /** The eleven-character id, never a URL: it ends up in an iframe src. */
+    youtube_video_id?: string | null;
     source_url?: string | null;
     ingredients: RecipeIngredient[];
     stat?: RecipeStat | null;
@@ -270,4 +273,20 @@ export interface Cook {
 export interface CookProfile {
     cook: Cook;
     recipes: PaginatedResponse<RecipeList>;
+}
+
+export type CreatorApplicationStatus = 'pending' | 'approved' | 'declined';
+
+/**
+ * An application as its applicant sees it. It deliberately never names the
+ * admin who decided — who declined you is not part of the answer.
+ */
+export interface CreatorApplication {
+    id: number;
+    status: CreatorApplicationStatus;
+    pitch: string;
+    youtube_channel_url?: string | null;
+    review_note?: string | null;
+    reviewed_at?: string | null;
+    created_at?: string;
 }

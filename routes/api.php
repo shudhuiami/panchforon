@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContentFlagController;
 use App\Http\Controllers\Api\CookController;
+use App\Http\Controllers\Api\CreatorApplicationController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MealPlanController;
 use App\Http\Controllers\Api\PageController;
@@ -64,6 +65,10 @@ Route::middleware(['auth:sanctum', EnsureUserIsNotSuspended::class])->group(func
 
     // Reporting a recipe
     Route::post('/recipes/{id}/flag', [ContentFlagController::class, 'store'])->whereNumber('id');
+
+    // Asking to be made a creator, and reading back how that went
+    Route::post('/creator-applications', [CreatorApplicationController::class, 'store']);
+    Route::get('/creator-applications/me', [CreatorApplicationController::class, 'me']);
 
     // Ratings
     Route::put('/recipes/{id}/rating', [RatingController::class, 'upsert'])->whereNumber('id');

@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage';
 import { RecipesPage } from './pages/RecipesPage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { CreateRecipePage } from './pages/CreateRecipePage';
+import { BecomeCreatorPage } from './pages/BecomeCreatorPage';
 import { EditRecipePage } from './pages/EditRecipePage';
 import { MealPlanPage } from './pages/MealPlanPage';
 import { PlanHistoryPage } from './pages/PlanHistoryPage';
@@ -53,6 +54,7 @@ export const RootApp: React.FC = () => (
                                 <Route path="/p/:slug" element={<ContentPage />} />
                                 <Route element={<RequireAuth />}>
                                     <Route path="/recipes/create" element={<CreateRecipePage />} />
+                                    <Route path="/become-a-creator" element={<BecomeCreatorPage />} />
                                     <Route path="/recipes/:slug/edit" element={<EditRecipePage />} />
                                     <Route path="/saved" element={<WishlistPage />} />
                                     <Route path="/account" element={<AccountPage />} />
