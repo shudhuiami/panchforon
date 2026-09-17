@@ -15,12 +15,12 @@ class RecipePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, Recipe $recipe): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -33,17 +33,17 @@ class RecipePolicy
 
     public function update(User $user, Recipe $recipe): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, Recipe $recipe): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function deleteAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -54,7 +54,7 @@ class RecipePolicy
      */
     public function moderate(User $user, Recipe $recipe): bool
     {
-        return $this->isActiveAdmin($user) && $recipe->isUserSubmitted();
+        return $user->isActiveAdmin() && $recipe->isUserSubmitted();
     }
 
     /**
@@ -63,11 +63,6 @@ class RecipePolicy
      */
     public function moderateAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
+        return $user->isActiveAdmin();
     }
 }

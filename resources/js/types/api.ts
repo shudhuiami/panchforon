@@ -6,6 +6,9 @@ export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'snack' | 'dinner' | '
 /** How hot a dish is. Null on the many recipes with nothing to say about it. */
 export type SpiceLevel = 'mild' | 'medium' | 'hot';
 
+/** What an account may do. Only ever sent on the signed-in user's own payload. */
+export type UserRole = 'member' | 'creator' | 'admin';
+
 /** Another person, as shown on their recipes and reviews. */
 export interface User {
     id: number;
@@ -17,6 +20,7 @@ export interface User {
 export interface CurrentUser extends User {
     email: string;
     is_admin: boolean;
+    role: UserRole;
     email_verified_at?: string | null;
     recipes_count?: number;
     ratings_count?: number;

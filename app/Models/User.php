@@ -166,7 +166,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function scopeAdmins(Builder $query): void
     {
-        $query->where('is_admin', true);
+        $query->where('role', UserRole::Admin);
     }
 
     /**

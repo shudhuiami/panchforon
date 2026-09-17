@@ -14,6 +14,7 @@ test('the current user payload carries role and counts', function () {
     $this->actingAs($admin)->getJson('/api/user')
         ->assertStatus(200)
         ->assertJsonPath('data.is_admin', true)
+        ->assertJsonPath('data.role', 'admin')
         ->assertJsonPath('data.recipes_count', 2)
         ->assertJsonPath('data.ratings_count', 0)
         ->assertJsonPath('data.email', $admin->email);
@@ -39,7 +40,8 @@ test('a recipe author is public without an email address or role', function () {
 
     expect($json)->toHaveKeys(['id', 'name'])
         ->and($json)->not->toHaveKey('email')
-        ->and($json)->not->toHaveKey('is_admin');
+        ->and($json)->not->toHaveKey('is_admin')
+        ->and($json)->not->toHaveKey('role');
 });
 
 test('a reviewer is public without an email address', function () {

@@ -330,7 +330,7 @@ class RecipeController extends Controller
             return false;
         }
 
-        return $user->is_admin || (int) $recipe->user_id === (int) $user->id;
+        return $user->isAdmin() || (int) $recipe->user_id === (int) $user->id;
     }
 
     /**

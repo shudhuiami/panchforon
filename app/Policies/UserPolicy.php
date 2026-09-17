@@ -16,12 +16,12 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, User $model): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -34,17 +34,17 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, User $model): bool
     {
-        return $this->isActiveAdmin($user) && $user->isNot($model);
+        return $user->isActiveAdmin() && $user->isNot($model);
     }
 
     public function deleteAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -55,11 +55,6 @@ class UserPolicy
      */
     public function moderate(User $user, User $model): bool
     {
-        return $this->isActiveAdmin($user) && $user->isNot($model);
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
+        return $user->isActiveAdmin() && $user->isNot($model);
     }
 }
