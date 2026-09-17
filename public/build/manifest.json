@@ -32,7 +32,7 @@
     "src": "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-ckm6u5PU.css",
+    "file": "assets/app-7eegW1K4.css",
     "name": "app",
     "names": [
       "app.css"
@@ -57,7 +57,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-Ozvi02jf.js",
+    "file": "assets/app-D07RxCTZ.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,

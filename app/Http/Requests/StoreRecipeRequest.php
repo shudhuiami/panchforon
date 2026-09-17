@@ -12,13 +12,20 @@ use Illuminate\Validation\Rule;
 class StoreRecipeRequest extends FormRequest
 {
     /**
-     * Honours the "user submissions" toggle on the admin settings screen. A
-     * draft is private to its author and never reaches the review queue, so
-     * saving one is still allowed while submissions are closed; it is
+     * Writing the catalogue is a creator's job, so the role comes first: a
+     * member has to apply for it before any of this is reachable, draft or not.
+     *
+     * The "user submissions" toggle on the admin settings screen then applies
+     * on top. A draft is private to its author and never reaches the review
+     * queue, so saving one is still allowed while submissions are closed; it is
      * publishing that counts as submitting.
      */
     public function authorize(): bool
     {
+        if (! $this->user()?->isCreator()) {
+            return false;
+        }
+
         if ($this->savesAsDraft()) {
             return true;
         }
@@ -26,9 +33,18 @@ class StoreRecipeRequest extends FormRequest
         return app(SettingsRepository::class)->boolean('submissions_open', true);
     }
 
+    /**
+     * Two different refusals wear the same 403, so each says which one it is:
+     * a member needs to apply for the role, while a creator is only waiting for
+     * the submissions toggle to come back on.
+     */
     protected function failedAuthorization(): never
     {
-        throw new AuthorizationException('Recipe submissions are currently closed.');
+        throw new AuthorizationException(
+            $this->user()?->isCreator()
+                ? 'Recipe submissions are currently closed.'
+                : 'Only creators can post recipes. Apply to become a creator to share yours.',
+        );
     }
 
     /**
@@ -70,12 +86,26 @@ class StoreRecipeRequest extends FormRequest
     }
 
     /**
-     * What the recipe is created as. Publishing is the default so a client
-     * that sends no status keeps submitting straight to the queue.
+     * What the recipe is created as. Publishing is the default, so a client
+     * that sends no status is saving something the site can show.
+     *
+     * A creator writes straight into the catalogue — that is the point of the
+     * role — so their recipe lands approved rather than queued. The Pending arm
+     * is left for the author who may post but is not trusted to skip review: a
+     * suspended creator, today the only one who reaches it.
+     *
+     * moderated_at and moderated_by stay null either way. They record that an
+     * admin made a decision, and on an auto-publish nobody did.
      */
     public function moderationStatus(): ModerationStatus
     {
-        return $this->savesAsDraft() ? ModerationStatus::Draft : ModerationStatus::Pending;
+        if ($this->savesAsDraft()) {
+            return ModerationStatus::Draft;
+        }
+
+        return $this->user()?->canPublishWithoutReview()
+            ? ModerationStatus::Approved
+            : ModerationStatus::Pending;
     }
 
     /**

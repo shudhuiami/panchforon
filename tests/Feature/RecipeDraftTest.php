@@ -20,7 +20,7 @@ function draftRecipe(array $attributes = []): Recipe
 }
 
 test('saving a recipe as a draft keeps it out of the moderation queue', function () {
-    $author = User::factory()->create();
+    $author = User::factory()->creator()->create();
 
     $this->actingAs($author)->postJson('/api/recipes', [
         'status' => 'draft',
@@ -37,15 +37,15 @@ test('saving a recipe as a draft keeps it out of the moderation queue', function
 });
 
 test('posting a recipe still publishes by default', function () {
-    $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+    $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'title' => 'Doi Begun',
         'instructions' => 'Fry the aubergine, fold through yoghurt.',
         'ingredients' => [['raw_text' => '2 aubergines']],
-    ])->assertStatus(201)->assertJsonPath('data.moderation_status', 'pending');
+    ])->assertStatus(201)->assertJsonPath('data.moderation_status', 'approved');
 });
 
 test('a status other than draft or published is rejected', function () {
-    $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+    $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'status' => 'approved',
         'title' => 'Sneaky Shortcut',
         'instructions' => 'Skip the queue.',
@@ -110,25 +110,29 @@ test('a draft is left out of the home feed and its counts', function () {
         ->and(collect($feed['latest'])->pluck('id')->all())->toBe([$published->id]);
 });
 
-test('publishing a draft sends it to the review queue', function () {
-    $author = User::factory()->create();
+test('a creator publishing a draft puts it straight on the site', function () {
+    $author = User::factory()->creator()->create();
     $recipe = draftRecipe(['user_id' => $author->id]);
 
     $this->actingAs($author)
         ->postJson("/api/recipes/{$recipe->id}/publish")
         ->assertOk()
-        ->assertJsonPath('data.moderation_status', 'pending');
+        ->assertJsonPath('data.moderation_status', 'approved');
 
-    // Still not public: a moderator has to approve it, as with any submission.
-    expect($recipe->fresh()->moderation_status)->toBe(ModerationStatus::Pending)
-        ->and(Recipe::query()->awaitingModeration()->count())->toBe(1)
-        ->and(Recipe::query()->publiclyVisible()->count())->toBe(0);
+    /**
+     * The same answer a creator gets posting directly. Writing something over
+     * two sittings rather than one is not a reason to be treated as less
+     * trusted, and the queue would otherwise fill with work nobody asked for.
+     */
+    expect($recipe->fresh()->moderation_status)->toBe(ModerationStatus::Approved)
+        ->and(Recipe::query()->awaitingModeration()->count())->toBe(0)
+        ->and(Recipe::query()->publiclyVisible()->count())->toBe(1);
 });
 
 test('publishing someone else draft is refused', function () {
     $recipe = draftRecipe();
 
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->creator()->create())
         ->postJson("/api/recipes/{$recipe->id}/publish")
         ->assertStatus(403);
 
@@ -140,7 +144,7 @@ test('publishing needs a signed-in cook', function () {
 });
 
 test('publishing something that is not a draft is a 422', function () {
-    $author = User::factory()->create();
+    $author = User::factory()->creator()->create();
     $published = Recipe::factory()->create(['user_id' => $author->id]);
 
     $this->actingAs($author)
@@ -151,16 +155,16 @@ test('publishing something that is not a draft is a 422', function () {
 });
 
 test('an author can publish a draft while saving the edit', function () {
-    $author = User::factory()->create();
+    $author = User::factory()->creator()->create();
     $recipe = draftRecipe(['user_id' => $author->id, 'title' => 'Rough Notes']);
 
     $this->actingAs($author)->putJson("/api/recipes/{$recipe->id}", [
         'status' => 'published',
         'title' => 'Beef Kala Bhuna',
         'instructions' => 'Cook it down until the masala darkens.',
-    ])->assertOk()->assertJsonPath('data.moderation_status', 'pending');
+    ])->assertOk()->assertJsonPath('data.moderation_status', 'approved');
 
-    expect($recipe->fresh()->moderation_status)->toBe(ModerationStatus::Pending);
+    expect($recipe->fresh()->moderation_status)->toBe(ModerationStatus::Approved);
 });
 
 test('editing a draft without a status leaves it a draft', function () {
@@ -204,7 +208,7 @@ test('editing a recipe in review leaves it in review', function () {
 test('a draft can still be saved while submissions are closed', function () {
     app(SettingsRepository::class)->set('submissions_open', false);
 
-    $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+    $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'status' => 'draft',
         'title' => 'Written In The Quiet',
         'instructions' => 'Wait for the queue to reopen.',
@@ -215,7 +219,7 @@ test('a draft can still be saved while submissions are closed', function () {
 test('publishing a draft while submissions are closed is refused', function () {
     app(SettingsRepository::class)->set('submissions_open', false);
 
-    $author = User::factory()->create();
+    $author = User::factory()->creator()->create();
     $recipe = draftRecipe(['user_id' => $author->id]);
 
     $this->actingAs($author)->postJson("/api/recipes/{$recipe->id}/publish")->assertStatus(403);

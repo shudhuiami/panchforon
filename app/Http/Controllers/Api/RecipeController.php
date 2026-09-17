@@ -142,8 +142,9 @@ class RecipeController extends Controller
         ]);
 
         if ($recipe->isDraft() && $request->publishesDraft()) {
+            $this->assertMayPublish($request);
             $this->assertSubmissionsOpen();
-            $data['moderation_status'] = ModerationStatus::Pending;
+            $data['moderation_status'] = $this->publishedStatusFor($request);
         }
 
         if ($request->has('title')) {
@@ -232,13 +233,30 @@ class RecipeController extends Controller
             abort(422, 'Only a draft can be published.');
         }
 
+        $this->assertMayPublish($request);
         $this->assertSubmissionsOpen();
 
-        $recipe->update(['moderation_status' => ModerationStatus::Pending]);
+        $recipe->update(['moderation_status' => $this->publishedStatusFor($request)]);
 
         $recipe->load(['user', 'ingredients.ingredient', 'stat', 'ratings.user']);
 
         return new RecipeDetailResource($recipe);
+    }
+
+    /**
+     * What a recipe becomes when its author publishes it.
+     *
+     * The same answer wherever publishing happens, so a creator who saves a
+     * draft on Monday and publishes it on Tuesday does not land in a queue
+     * that a creator posting directly sails past.
+     */
+    protected function publishedStatusFor(Request $request): ModerationStatus
+    {
+        $user = $request->user();
+
+        return $user instanceof User && $user->canPublishWithoutReview()
+            ? ModerationStatus::Approved
+            : ModerationStatus::Pending;
     }
 
     /**
@@ -295,6 +313,25 @@ class RecipeController extends Controller
         return response()->json([
             'data' => $categories,
         ]);
+    }
+
+    /**
+     * Putting a recipe in front of the public is a creator's job, exactly as
+     * writing a new one is, so a draft cannot be used to get round the role.
+     *
+     * Ownership is checked separately and deliberately stays as it is: a member
+     * who wrote recipes before the role existed keeps them and keeps editing
+     * them. What they can no longer do is put another one live.
+     */
+    protected function assertMayPublish(Request $request): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user instanceof User && $user->isCreator(),
+            403,
+            'Only creators can publish recipes. Apply to become a creator to share yours.',
+        );
     }
 
     /**

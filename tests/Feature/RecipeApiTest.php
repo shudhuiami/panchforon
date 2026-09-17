@@ -56,7 +56,7 @@ test('returns 404 for nonexistent recipe slug', function () {
 });
 
 test('authenticated user can create a recipe with dynamic ingredients', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->creator()->create();
 
     $payload = [
         'title' => 'Spicy Masoor Dal',
@@ -132,7 +132,7 @@ test('non-owner cannot delete someone else recipe', function () {
 });
 
 test('a recipe is created with its bangla name, cooking times, spice level and per-row ingredient detail', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->creator()->create();
 
     $res = $this->actingAs($user)->postJson('/api/recipes', [
         'title' => 'Bangladeshi Chicken Curry',
@@ -283,7 +283,7 @@ test('total_minutes reports whichever time is known, and nothing when neither is
 });
 
 test('an unknown spice level, a negative time and an implausible one are all rejected', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->creator()->create();
 
     $this->actingAs($user)->postJson('/api/recipes', [
         'title' => 'Nuclear Vindaloo',
@@ -307,7 +307,7 @@ test('an unknown spice level, a negative time and an implausible one are all rej
 });
 
 test('an ingredient unit that matches no known unit is stored rather than rejected', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->creator()->create();
 
     $res = $this->actingAs($user)->postJson('/api/recipes', [
         'title' => 'Imported Kitchen Sink',
