@@ -45,3 +45,75 @@ jobs:
 
       - name: Run Pest test suite
         run: vendor/bin/pest
+
+  deploy:
+    name: Deploy to production
+    needs: backend-tests
+
+    # Only a merge into main deploys. A pull request's CI run never does, and
+    # DEPLOY_ENABLED keeps main green until the server is actually ready.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+
+    # Deploys queue rather than cancel one another. Killing a deploy mid-flight
+    # can leave the server in maintenance mode, because `php artisan up` never
+    # runs; a queued newer deploy still lands last, so production ends on the
+    # newest commit either way.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          # The commit these tests just passed on, not whatever origin/main has
+          # drifted to since.
+          DEPLOY_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          # Unset means the host key is not verified, which is how most guides
+          # leave it; set it and a swapped host cannot collect the deploy key.
+          fingerprint: ${{ secrets.SSH_HOST_FINGERPRINT }}
+          envs: DEPLOY_SHA
+          command_timeout: 20m
+          script_stop: true      # fail the job on the first command that errors
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            # Maintenance mode while we swap code and migrate. If a command
+            # below fails the site deliberately stays down: half-migrated is
+            # worse than briefly unavailable, and the failed job says so.
+            php artisan down --render="errors::503" || true
+
+            # Deploy the exact commit CI passed on. reset --hard (not pull)
+            # avoids merge conflicts if the server's working tree ever drifts.
+            git fetch --all --prune
+            git reset --hard "$DEPLOY_SHA"
+
+            # Production dependencies + optimized autoloader. No npm step:
+            # public/build is committed, so the server needs no Node.
+            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+            # Apply migrations non-interactively.
+            php artisan migrate --force
+
+            # Rebuild caches for production speed.
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Pick up new code in queue workers, then go back online.
+            php artisan queue:restart
+            php artisan up
