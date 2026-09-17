@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -16,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
+ * @property UserRole $role
  * @property bool $is_admin
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $suspended_at
@@ -35,6 +37,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'role',
         'is_admin',
         'suspended_at',
         'suspension_reason',
@@ -60,9 +63,62 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
             'is_admin' => 'boolean',
             'suspended_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Keeps role and is_admin agreeing while both columns exist.
+     *
+     * The role column is the one being kept; is_admin is dropped once every
+     * reader has moved off it. Until then either can be written — the admin
+     * panel still toggles the boolean, while new code sets the role — so
+     * whichever one changed decides the other. Delete this hook, and the
+     * column, in the same change.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user): void {
+            if ($user->isDirty('is_admin') && ! $user->isDirty('role')) {
+                $user->role = $user->is_admin ? UserRole::Admin : UserRole::Member;
+
+                return;
+            }
+
+            $user->is_admin = $user->role === UserRole::Admin;
+        });
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    /**
+     * Admins are creators too: anything a creator may do, an admin may do.
+     */
+    public function isCreator(): bool
+    {
+        return $this->role->reachesStudio();
+    }
+
+    /**
+     * The question seven policies were each asking in their own copy of it.
+     */
+    public function isActiveAdmin(): bool
+    {
+        return $this->isAdmin() && ! $this->isSuspended();
+    }
+
+    /**
+     * Whether this author's recipes go straight onto the site rather than
+     * into the moderation queue.
+     */
+    public function canPublishWithoutReview(): bool
+    {
+        return $this->role->publishesWithoutReview() && ! $this->isSuspended();
     }
 
     /**
