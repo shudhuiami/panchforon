@@ -28,3 +28,10 @@ A `casts()` entry is invisible to it. A model with `'reviewed_at' => 'datetime'`
 
 ## A Filament hidden field bound to an array arrives back as "[object Object]"
 The browser stringifies it. Keep hidden state scalar — the studio's video picker pages through YouTube by storing a space-joined string of page tokens rather than an array of them.
+
+## Filament's own JS/CSS is generated, not committed — and the SPA fallback used to hide that
+`public/js/filament`, `public/css/filament` and `public/fonts/filament` are gitignored. They are produced by `php artisan filament:assets`, so a fresh clone and a `git reset --hard` deploy both start without them.
+
+The failure is silent rather than loud: a request for a missing `/js/filament/support/support.js` reaches PHP, and the SPA catch-all in `routes/web.php` used to match it and return the storefront's HTML with a **200**. The browser gets a page where it asked for a script, so the only symptom is `filamentDropdown is not defined` in the console — every panel renders but no dropdown opens, no action modal mounts, no table filter works.
+
+Two things now keep it fixed, and both should stay: `composer.json`'s `post-autoload-dump` runs `filament:upgrade` (which publishes the assets) so every `composer install` regenerates them, and the catch-all excludes `build/ css/ fonts/ icons/ js/` so a missing asset is a plain 404 again. `SpaEntryTest` covers both.
