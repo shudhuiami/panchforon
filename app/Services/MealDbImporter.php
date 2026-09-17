@@ -7,6 +7,7 @@ use App\Models\Ingredient;
 use App\Models\IngredientAlias;
 use App\Models\Recipe;
 use App\Models\RecipeIngredient;
+use App\Support\YouTubeVideoId;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -105,6 +106,15 @@ class MealDbImporter
                 'image_url' => ! empty($data['strMealThumb']) ? trim((string) $data['strMealThumb']) : null,
                 'servings' => 4,
                 'source_url' => ! empty($data['strSource']) ? trim((string) $data['strSource']) : 'https://www.themealdb.com',
+                /**
+                 * strYoutube is a full watch URL, and the column holds a bare
+                 * id because the site embeds it. Anything that does not reduce
+                 * to one — a dead field, a link somewhere else — becomes null
+                 * rather than reaching an iframe src.
+                 */
+                'youtube_video_id' => ! empty($data['strYoutube'])
+                    ? YouTubeVideoId::fromInput((string) $data['strYoutube'])
+                    : null,
             ]
         );
 

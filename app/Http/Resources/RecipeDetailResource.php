@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Recipe;
+use App\Support\YouTubeVideoId;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,7 @@ class RecipeDetailResource extends JsonResource
             'cook_minutes' => $this->cook_minutes,
             'total_minutes' => $this->totalMinutes(),
             'spice_level' => $this->spice_level?->value,
+            'youtube_video_id' => $this->videoId(),
             'source_url' => $this->source_url,
             'ingredients' => RecipeIngredientResource::collection($this->whenLoaded('ingredients')),
             'stat' => new RecipeStatResource($this->whenLoaded('stat')),
@@ -51,6 +53,19 @@ class RecipeDetailResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * The bare eleven-character id of this recipe's video, never a URL.
+     *
+     * What comes out of here is dropped straight into an iframe src, so the
+     * stored value goes back through the same extraction that put it there:
+     * this is the last place a column left dirty by an old import or a direct
+     * write can be stopped from steering the embed off YouTube.
+     */
+    private function videoId(): ?string
+    {
+        return $this->youtube_video_id === null ? null : YouTubeVideoId::fromInput($this->youtube_video_id);
     }
 
     /**

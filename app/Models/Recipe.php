@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
  * @property ?int $prep_minutes
  * @property ?int $cook_minutes
  * @property ?SpiceLevel $spice_level
+ * @property ?string $youtube_video_id
  */
 class Recipe extends Model
 {
