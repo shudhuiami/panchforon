@@ -4,6 +4,7 @@ namespace App\Filament\Studio\Resources\Recipes\Tables;
 
 use App\Enums\ModerationStatus;
 use App\Enums\SpiceLevel;
+use App\Filament\Actions\StudioRecipeActions;
 use App\Filament\Studio\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
 use Filament\Actions\EditAction;
@@ -120,8 +121,12 @@ class RecipesTable
                         ->all()),
             ])
             /**
-             * Read and edit your own. Approving and unpublishing are a
-             * moderator's job and stay in the admin panel.
+             * Read and edit your own, and send your own draft out. Approving
+             * and unpublishing somebody else's submission are a moderator's
+             * job and stay in the admin panel; publishing a draft is not one
+             * of those — it is the author finishing a save they postponed, and
+             * StudioRecipeActions::publish() only ever appears on a draft the
+             * viewer wrote.
              *
              * Deliberately no bulk actions, delete above all: Filament asks
              * RecipePolicy::deleteAny() whether to offer one, and that question
@@ -130,6 +135,7 @@ class RecipesTable
              * at a time goes through delete(), which can be.
              */
             ->recordActions([
+                StudioRecipeActions::publish(),
                 ViewAction::make(),
                 EditAction::make(),
             ])

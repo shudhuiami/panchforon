@@ -3,19 +3,36 @@
 namespace App\Filament\Studio\Resources\Recipes\Schemas;
 
 use App\Enums\SpiceLevel;
+use App\Filament\Studio\Pages\Channel;
 use App\Models\Ingredient;
 use App\Models\Recipe;
 use App\Models\Unit;
+use App\Models\User;
 use App\Rules\YouTubeVideoLink;
 use App\Services\RecipeIngredientWriter;
+use App\Services\YouTube\YouTubeChannel;
+use App\Services\YouTube\YouTubeClient;
+use App\Services\YouTube\YouTubeVideo;
 use App\Support\YouTubeVideoId;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 /**
  * Writing a recipe in the Creator Studio.
@@ -31,7 +48,9 @@ use Filament\Schemas\Schema;
  *   a creator does not get to set it at all. What they do get is the draft
  *   toggle below, which is a question about this save rather than a status.
  * - A YouTube field, which the admin form has not got, because a creator
- *   pasting the link to their own video is the case it exists for.
+ *   pasting the link to their own video is the case it exists for — with a
+ *   picker beside it that lists the uploads of the channel they connected, so
+ *   the usual case is two clicks rather than a trip to another tab.
  *
  * And the ingredients repeater, which is new to both: the admin panel has
  * never been able to edit an ingredient list, and a recipe you cannot write
@@ -254,10 +273,263 @@ class RecipeForm
             ->columnSpanFull()
             ->placeholder('https://www.youtube.com/watch?v=...')
             ->helperText('Paste the link to the video. Only the video id is kept.')
+            ->hintAction(self::videoPicker())
             ->rule(new YouTubeVideoLink, fn (?string $state): bool => filled($state))
             ->dehydrateStateUsing(fn (?string $state): ?string => filled($state)
                 ? YouTubeVideoId::fromInput($state)
                 : null);
+    }
+
+    /**
+     * Pick the video instead of pasting it.
+     *
+     * The whole thing hangs off one string of state — the page tokens loaded
+     * so far — and everything else is derived from it. That is deliberate:
+     * a hidden input bound to an array is a value the browser turns into
+     * "[object Object]" the moment anything touches it, and YouTube's page
+     * tokens are short strings that walk the list perfectly well on their own.
+     * Re-reading the earlier pages to rebuild the list costs nothing either,
+     * because the client caches every page for an hour.
+     *
+     * Absent entirely when there is no API key: an unconfigured site behaves
+     * as though the feature does not exist rather than offering a button that
+     * opens onto nothing.
+     */
+    protected static function videoPicker(): Action
+    {
+        return Action::make('pickYouTubeVideo')
+            ->label('Pick from my channel')
+            ->icon(Heroicon::OutlinedVideoCamera)
+            ->visible(fn (): bool => app(YouTubeClient::class)->isConfigured())
+            ->modalHeading('Your uploads')
+            ->modalWidth(Width::TwoExtraLarge)
+            ->modalSubmitActionLabel('Use this video')
+            /**
+             * Nothing to submit when there was nothing to pick — no channel
+             * connected, or a channel with no public uploads on it yet. A
+             * submit button over an empty list only produces a validation
+             * error about a choice that could not be made.
+             */
+            ->modalSubmitAction(fn (Action $action): Action|bool => self::hasSomethingToPick() ? $action : false)
+            ->fillForm(fn (): array => ['page_tokens' => '', 'video_id' => null])
+            ->schema(fn (): array => self::connectedChannel() instanceof YouTubeChannel
+                ? self::uploadsPicker()
+                : self::connectChannelPrompt())
+            ->action(function (array $data, Set $set): void {
+                /**
+                 * Even our own list goes through the extractor on the way to
+                 * the field, for the reason the client itself gives: only the
+                 * bare eleven characters may ever reach an embed.
+                 */
+                $id = YouTubeVideoId::fromInput((string) ($data['video_id'] ?? ''));
+
+                if ($id !== null) {
+                    $set('youtube_video_id', $id);
+                }
+            });
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    protected static function uploadsPicker(): array
+    {
+        return [
+            Hidden::make('page_tokens'),
+
+            Radio::make('video_id')
+                ->hiddenLabel()
+                ->required()
+                ->options(fn (Get $get): array => self::videoOptions(self::loadedVideos($get('page_tokens'))))
+                ->descriptions(fn (Get $get): array => self::videoDescriptions(self::loadedVideos($get('page_tokens')))),
+
+            Text::make('This channel has no public videos yet. Anything you upload will show up here.')
+                ->color('gray')
+                ->visible(fn (Get $get): bool => self::loadedVideos($get('page_tokens')) === []),
+
+            Actions::make([
+                Action::make('loadMore')
+                    ->label('Show older videos')
+                    ->icon(Heroicon::OutlinedChevronDown)
+                    ->link()
+                    ->visible(fn (Get $get): bool => self::nextPageToken($get('page_tokens')) !== null)
+                    ->action(function (Get $get, Set $set): void {
+                        $next = self::nextPageToken($get('page_tokens'));
+
+                        if ($next === null) {
+                            return;
+                        }
+
+                        $set('page_tokens', trim(((string) $get('page_tokens')).' '.$next));
+                    }),
+            ])->key('olderVideos'),
+        ];
+    }
+
+    /**
+     * What the modal is when the creator has not connected a channel.
+     *
+     * A grid with nothing in it reads as "you have no videos", which is a
+     * different and more disheartening thing than "we do not know where your
+     * videos are". So it says the second, and points at the page that fixes it.
+     *
+     * @return array<int, mixed>
+     */
+    protected static function connectChannelPrompt(): array
+    {
+        return [
+            Callout::make()
+                ->info()
+                ->icon(Heroicon::OutlinedVideoCamera)
+                ->heading('No channel connected yet')
+                ->description('Connect your YouTube channel and your uploads will be listed here to choose from. Until then you can paste a video link by hand.')
+                ->footerActions([
+                    Action::make('connectChannel')
+                        ->label('Connect a channel')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url(fn (): string => Channel::getUrl()),
+                ]),
+        ];
+    }
+
+    /**
+     * A connected channel with at least one public upload on it. Both halves
+     * are cached, so asking costs nothing after the first render.
+     */
+    protected static function hasSomethingToPick(): bool
+    {
+        return self::connectedChannel() instanceof YouTubeChannel
+            && self::loadedVideos('') !== [];
+    }
+
+    /**
+     * Every video across the pages loaded so far, in upload order.
+     *
+     * @return list<YouTubeVideo>
+     */
+    protected static function loadedVideos(mixed $pageTokens): array
+    {
+        return self::walk($pageTokens)['videos'];
+    }
+
+    /**
+     * The token for the page after the last one loaded, or null at the end of
+     * the channel.
+     */
+    protected static function nextPageToken(mixed $pageTokens): ?string
+    {
+        return self::walk($pageTokens)['next'];
+    }
+
+    /**
+     * Read the first page, then each token that "show older" has added.
+     *
+     * @return array{videos: list<YouTubeVideo>, next: ?string}
+     */
+    protected static function walk(mixed $pageTokens): array
+    {
+        $channel = self::connectedChannel();
+
+        if (! $channel instanceof YouTubeChannel) {
+            return ['videos' => [], 'next' => null];
+        }
+
+        $client = app(YouTubeClient::class);
+
+        /** The first page has no token; the rest are whatever has been added. */
+        $tokens = [null, ...self::splitTokens($pageTokens)];
+
+        $videos = [];
+        $next = null;
+
+        foreach ($tokens as $token) {
+            $page = $client->uploads($channel->uploadsPlaylistId, $token);
+
+            $videos = [...$videos, ...$page->videos];
+            $next = $page->nextPageToken;
+        }
+
+        return ['videos' => $videos, 'next' => $next];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected static function splitTokens(mixed $pageTokens): array
+    {
+        return array_values(array_filter(
+            explode(' ', is_string($pageTokens) ? $pageTokens : ''),
+            fn (string $token): bool => $token !== '',
+        ));
+    }
+
+    /**
+     * A thumbnail and a title per option.
+     *
+     * Radio escapes a plain string label and renders an Htmlable one as it
+     * stands, so every value interpolated below is escaped by hand — the title
+     * is whatever the channel owner typed, and the URL is whatever the API
+     * returned. The src is additionally required to be https, so no other
+     * scheme can reach an attribute the browser will fetch.
+     *
+     * @param  list<YouTubeVideo>  $videos
+     * @return array<string, HtmlString>
+     */
+    protected static function videoOptions(array $videos): array
+    {
+        $options = [];
+
+        foreach ($videos as $video) {
+            $thumbnail = str_starts_with((string) $video->thumbnailUrl, 'https://')
+                ? '<img src="'.e($video->thumbnailUrl).'" alt="" loading="lazy" '
+                    .'style="width:8rem;height:4.5rem;flex:none;object-fit:cover;border-radius:0.375rem;" />'
+                : '';
+
+            $options[$video->id] = new HtmlString(
+                '<span style="display:inline-flex;align-items:center;gap:0.75rem;">'
+                .$thumbnail
+                .'<span>'.e($video->title).'</span>'
+                .'</span>'
+            );
+        }
+
+        return $options;
+    }
+
+    /**
+     * When each one went public, which is how a cook tells two versions of the
+     * same dish apart. Radio escapes these, so they stay plain text.
+     *
+     * @param  list<YouTubeVideo>  $videos
+     * @return array<string, string>
+     */
+    protected static function videoDescriptions(array $videos): array
+    {
+        $descriptions = [];
+
+        foreach ($videos as $video) {
+            $descriptions[$video->id] = $video->publishedAt?->format('j M Y') ?? 'Publication date unknown';
+        }
+
+        return $descriptions;
+    }
+
+    /**
+     * The channel connected on the Channel page, looked up by its id.
+     *
+     * The id rather than the handle: a handle can be changed by its owner, the
+     * id cannot, and the uploads playlist the picker actually needs only comes
+     * back with the channel. One cached unit an hour.
+     */
+    protected static function connectedChannel(): ?YouTubeChannel
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof User || blank($user->youtube_channel_id)) {
+            return null;
+        }
+
+        return app(YouTubeClient::class)->resolveChannel((string) $user->youtube_channel_id);
     }
 
     /**

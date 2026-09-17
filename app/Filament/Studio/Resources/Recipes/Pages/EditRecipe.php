@@ -2,6 +2,7 @@
 
 namespace App\Filament\Studio\Resources\Recipes\Pages;
 
+use App\Filament\Actions\StudioRecipeActions;
 use App\Filament\Studio\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
 use Filament\Actions\DeleteAction;
@@ -16,9 +17,12 @@ use Filament\Resources\Pages\EditRecord;
  * mount() runs; RecipePolicy::update() then checks ownership again on the way
  * in, and RecipePolicy::delete() on the action below.
  *
- * Nothing here changes the moderation status. An edit is a change of content,
- * and a live recipe stays live through one — the same promise the API's update
- * endpoint makes, in the same words.
+ * Saving the form never changes the moderation status. An edit is a change of
+ * content, and a live recipe stays live through one — the same promise the
+ * API's update endpoint makes, in the same words. Publishing a draft is the
+ * one status change offered here, and it is an action rather than a field
+ * precisely because it is a decision on its own and not a side effect of
+ * saving a paragraph.
  */
 class EditRecipe extends EditRecord
 {
@@ -30,6 +34,7 @@ class EditRecipe extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            StudioRecipeActions::publish(),
             ViewAction::make(),
             DeleteAction::make(),
         ];
