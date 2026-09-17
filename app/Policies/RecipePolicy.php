@@ -12,10 +12,11 @@ use App\Models\User;
  * Mirrors UserPolicy: the panel middleware is the first gate, this is the
  * second, and Filament consults it for every page and record action.
  *
- * Reading is the only thing a creator may do here. Everything below viewing —
- * creating, updating, deleting and above all moderating — stays exactly as
- * strict as it was, because a creator who could moderate could approve their
- * own recipe through a door meant for a moderator.
+ * A creator reads, writes and deletes their own recipes and no one else's.
+ * What stays exactly as strict as it was is moderation: a creator who could
+ * moderate could approve their own recipe — or someone else's — through a
+ * door meant for a moderator. Skipping the review queue is something the
+ * creator role grants outright, never something a creator does by hand.
  */
 class RecipePolicy
 {
@@ -47,23 +48,48 @@ class RecipePolicy
     }
 
     /**
-     * Recipes arrive from TheMealDB imports or user submissions.
+     * Writing a recipe is what the studio is for, so any creator whose account
+     * is in good standing may. A suspended one may not: isActiveCreator()
+     * refuses them here exactly as canAccessPanel() refuses them the panel.
+     *
+     * There is still no create screen in the admin panel — correcting and
+     * moderating other people's work is what that panel does — so widening
+     * this changes nothing there.
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->isActiveAdmin() || $this->isActiveCreator($user);
     }
 
+    /**
+     * An admin may edit anything in the catalogue; a creator may edit what
+     * they wrote and nothing else. Same ownership test as view(), and the
+     * studio's query scoping still 404s a foreign id long before this runs.
+     */
     public function update(User $user, Recipe $recipe): bool
     {
-        return $user->isActiveAdmin();
+        if ($user->isActiveAdmin()) {
+            return true;
+        }
+
+        return $this->isActiveCreator($user) && $this->owns($user, $recipe);
     }
 
     public function delete(User $user, Recipe $recipe): bool
     {
-        return $user->isActiveAdmin();
+        if ($user->isActiveAdmin()) {
+            return true;
+        }
+
+        return $this->isActiveCreator($user) && $this->owns($user, $recipe);
     }
 
+    /**
+     * Stays admin-only, and deliberately so. Filament reads this per resource
+     * to decide whether to offer a delete bulk action, with no record to check
+     * against, so there is no way to scope it to the rows a creator owns — the
+     * studio's table therefore offers no bulk delete at all.
+     */
     public function deleteAny(User $user): bool
     {
         return $user->isActiveAdmin();

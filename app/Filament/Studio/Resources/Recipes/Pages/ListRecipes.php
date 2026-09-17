@@ -5,6 +5,7 @@ namespace App\Filament\Studio\Resources\Recipes\Pages;
 use App\Enums\ModerationStatus;
 use App\Filament\Studio\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,15 +16,21 @@ class ListRecipes extends ListRecords
     protected static string $resource = RecipeResource::class;
 
     /**
-     * No header actions. Importing and renaming taxonomies are catalogue-wide
-     * jobs and belong to the admin panel; writing a recipe arrives with the
-     * create screen in the next chunk.
+     * Writing a recipe, and nothing else. Importing and renaming taxonomies
+     * are catalogue-wide jobs and stay in the admin panel.
      *
-     * @return array<int, never>
+     * CreateAction hides itself when RecipeResource::canCreate() says no, so a
+     * suspended creator who somehow reaches this page is not shown a button
+     * that would only refuse them.
+     *
+     * @return array<int, mixed>
      */
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            CreateAction::make()
+                ->label('Write a recipe'),
+        ];
     }
 
     /**

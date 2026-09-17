@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 /**
  * @property RecipeSource $source
@@ -76,6 +77,59 @@ class Recipe extends Model
     {
         static::saved(fn () => HomeFeed::forget());
         static::deleted(fn () => HomeFeed::forget());
+    }
+
+    /**
+     * A URL slug for this title that no other recipe is already using.
+     *
+     * The slug column is unique, so there can only be one answer, and this is
+     * the one place that decides it: the API's store and update endpoints and
+     * the Creator Studio all call this, so the same title becomes the same
+     * slug whichever door a recipe came in through.
+     *
+     * Each caller used to carry its own suffix rule — "-{matches + 1}" when
+     * creating, "-{recipe id}" when renaming — which is how they drifted, and
+     * the counting one could still collide: a catalogue holding "korma-2" but
+     * no "korma" counts one match and proposes "korma-2" again. Counting up
+     * until the slug is free cannot.
+     *
+     * $ignoreId is the recipe being renamed. Without it, re-saving a recipe
+     * under the title it already has would see its own slug as taken and grow
+     * a pointless suffix every time.
+     */
+    public static function uniqueSlugFor(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title);
+
+        /**
+         * A title written entirely in a script Str::slug() strips — Bengali,
+         * say — reduces to nothing, and an empty slug would be one recipe's
+         * forever. Anything that lands here gets a suffix from the loop below.
+         */
+        if ($base === '') {
+            $base = 'recipe';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::slugIsTaken($slug, $ignoreId)) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    protected static function slugIsTaken(string $slug, ?int $ignoreId): bool
+    {
+        $query = static::query()->where('slug', $slug);
+
+        if ($ignoreId !== null) {
+            $query->whereKeyNot($ignoreId);
+        }
+
+        return $query->exists();
     }
 
     /**

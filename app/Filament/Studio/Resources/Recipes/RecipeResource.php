@@ -2,8 +2,11 @@
 
 namespace App\Filament\Studio\Resources\Recipes;
 
+use App\Filament\Studio\Resources\Recipes\Pages\CreateRecipe;
+use App\Filament\Studio\Resources\Recipes\Pages\EditRecipe;
 use App\Filament\Studio\Resources\Recipes\Pages\ListRecipes;
 use App\Filament\Studio\Resources\Recipes\Pages\ViewRecipe;
+use App\Filament\Studio\Resources\Recipes\Schemas\RecipeForm;
 use App\Filament\Studio\Resources\Recipes\Schemas\RecipeInfolist;
 use App\Filament\Studio\Resources\Recipes\Tables\RecipesTable;
 use App\Models\Recipe;
@@ -68,14 +71,15 @@ class RecipeResource extends Resource
     }
 
     /**
-     * Writing recipes from the studio arrives in the next chunk, along with
-     * the edit and delete screens. Until then the studio is somewhere to read
-     * your own work, and the ownership scoping above is the only thing that
-     * has to be right.
+     * There is deliberately no canCreate() override here any more. Writing is
+     * what the studio is for, so the question goes to RecipePolicy::create(),
+     * which allows any creator in good standing and refuses a suspended one.
+     * Hard-coding true would hand a suspended creator a button the policy then
+     * refuses on submit.
      */
-    public static function canCreate(): bool
+    public static function form(Schema $schema): Schema
     {
-        return false;
+        return RecipeForm::configure($schema);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -111,7 +115,9 @@ class RecipeResource extends Resource
     {
         return [
             'index' => ListRecipes::route('/'),
+            'create' => CreateRecipe::route('/create'),
             'view' => ViewRecipe::route('/{record}'),
+            'edit' => EditRecipe::route('/{record}/edit'),
         ];
     }
 }

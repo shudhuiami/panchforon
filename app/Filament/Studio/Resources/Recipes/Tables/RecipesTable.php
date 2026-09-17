@@ -6,6 +6,7 @@ use App\Enums\ModerationStatus;
 use App\Enums\SpiceLevel;
 use App\Filament\Studio\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -119,12 +120,18 @@ class RecipesTable
                         ->all()),
             ])
             /**
-             * Reading only. Approving, unpublishing and deleting are a
-             * moderator's job and stay in the admin panel; editing your own
-             * arrives with the write screens in the next chunk.
+             * Read and edit your own. Approving and unpublishing are a
+             * moderator's job and stay in the admin panel.
+             *
+             * Deliberately no bulk actions, delete above all: Filament asks
+             * RecipePolicy::deleteAny() whether to offer one, and that question
+             * comes with no record to check ownership against, so a bulk delete
+             * cannot be scoped to the rows a creator owns. Deleting one recipe
+             * at a time goes through delete(), which can be.
              */
             ->recordActions([
                 ViewAction::make(),
+                EditAction::make(),
             ])
             ->emptyStateHeading('No recipes yet')
             ->emptyStateDescription('Recipes you write will show up here.');

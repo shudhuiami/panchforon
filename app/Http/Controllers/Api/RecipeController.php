@@ -9,18 +9,14 @@ use App\Http\Requests\StoreRecipeRequest;
 use App\Http\Requests\UpdateRecipeRequest;
 use App\Http\Resources\RecipeDetailResource;
 use App\Http\Resources\RecipeListResource;
-use App\Models\Ingredient;
-use App\Models\IngredientAlias;
 use App\Models\Recipe;
-use App\Models\RecipeIngredient;
 use App\Models\User;
-use App\Services\IngredientParser;
 use App\Services\RankingService;
+use App\Services\RecipeIngredientWriter;
 use App\Services\SettingsRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Str;
 
 class RecipeController extends Controller
 {
@@ -68,17 +64,12 @@ class RecipeController extends Controller
      */
     public function store(
         StoreRecipeRequest $request,
-        IngredientParser $parser,
+        RecipeIngredientWriter $ingredients,
         RankingService $rankingService,
     ): JsonResponse {
         $userId = (int) $request->user()->id;
         $title = (string) $request->title;
-        $slug = Str::slug($title);
-
-        $count = Recipe::where('slug', 'like', "{$slug}%")->count();
-        if ($count > 0) {
-            $slug .= '-'.($count + 1);
-        }
+        $slug = Recipe::uniqueSlugFor($title);
 
         $recipe = Recipe::create([
             'user_id' => $userId,
@@ -98,7 +89,7 @@ class RecipeController extends Controller
             'source_url' => $request->source_url,
         ]);
 
-        $this->writeIngredients($recipe, (array) $request->input('ingredients', []), $parser);
+        $ingredients->write($recipe, (array) $request->input('ingredients', []));
 
         // Initialize recipe stat
         $rankingService->updateRecipeStats($recipe->id);
@@ -120,7 +111,7 @@ class RecipeController extends Controller
     public function update(
         UpdateRecipeRequest $request,
         int $id,
-        IngredientParser $parser,
+        RecipeIngredientWriter $ingredients,
     ): RecipeDetailResource {
         $recipe = Recipe::findOrFail($id);
 
@@ -150,69 +141,20 @@ class RecipeController extends Controller
         if ($request->has('title')) {
             $newTitle = (string) $request->title;
             if ($newTitle !== $recipe->title) {
-                $slug = Str::slug($newTitle);
-                $existing = Recipe::where('slug', $slug)->where('id', '!=', $recipe->id)->first();
-                if ($existing) {
-                    $slug .= '-'.$recipe->id;
-                }
                 $data['title'] = $newTitle;
-                $data['slug'] = $slug;
+                $data['slug'] = Recipe::uniqueSlugFor($newTitle, (int) $recipe->id);
             }
         }
 
         $recipe->update($data);
 
         if ($request->has('ingredients')) {
-            $recipe->ingredients()->delete();
-            $this->writeIngredients($recipe, (array) $request->input('ingredients', []), $parser);
+            $ingredients->replace($recipe, (array) $request->input('ingredients', []));
         }
 
         $recipe->load(['user', 'ingredients.ingredient', 'stat', 'ratings.user']);
 
         return new RecipeDetailResource($recipe);
-    }
-
-    /**
-     * Write a recipe's ingredient rows, in the order they were sent.
-     *
-     * A row can arrive structured (name, quantity, unit) or as one line of free
-     * text; the parser fills in whatever was not sent, and anything the client
-     * stated explicitly wins over what was parsed out of the text. is_optional
-     * and note belong to the row rather than to the ingredient, so they are
-     * taken verbatim and never inferred.
-     *
-     * @param  array<int|string, mixed>  $rows
-     */
-    protected function writeIngredients(Recipe $recipe, array $rows, IngredientParser $parser): void
-    {
-        $position = 0;
-
-        foreach ($rows as $ingItem) {
-            $rawText = ! empty($ingItem['raw_text']) ? trim((string) $ingItem['raw_text']) : '';
-            $customName = ! empty($ingItem['name']) ? trim((string) $ingItem['name']) : '';
-            $qty = isset($ingItem['quantity']) && $ingItem['quantity'] !== '' ? (float) $ingItem['quantity'] : null;
-            $unit = ! empty($ingItem['unit']) ? trim((string) $ingItem['unit']) : null;
-            $note = ! empty($ingItem['note']) ? trim((string) $ingItem['note']) : null;
-
-            if ($rawText === '' && $customName !== '') {
-                $rawText = trim(($qty !== null ? "{$qty} " : '').($unit ? "{$unit} " : '').$customName);
-            }
-
-            $parsed = $parser->parse($rawText !== '' ? $rawText : $customName, function (string $name) {
-                return $this->resolveOrCreateIngredient($name);
-            });
-
-            RecipeIngredient::create([
-                'recipe_id' => $recipe->id,
-                'ingredient_id' => $parsed->ingredientId,
-                'quantity' => $qty ?? $parsed->quantity,
-                'unit' => $unit ?? $parsed->unit,
-                'is_optional' => ! empty($ingItem['is_optional']),
-                'note' => $note,
-                'raw_text' => $rawText !== '' ? $rawText : ($customName ?: 'Ingredient'),
-                'position' => $position++,
-            ]);
-        }
     }
 
     /**
@@ -246,17 +188,19 @@ class RecipeController extends Controller
     /**
      * What a recipe becomes when its author publishes it.
      *
-     * The same answer wherever publishing happens, so a creator who saves a
+     * The rule itself lives on ModerationStatus, so a creator who saves a
      * draft on Monday and publishes it on Tuesday does not land in a queue
-     * that a creator posting directly sails past.
+     * that a creator posting directly — over the API or from the studio —
+     * sails past.
      */
     protected function publishedStatusFor(Request $request): ModerationStatus
     {
         $user = $request->user();
 
-        return $user instanceof User && $user->canPublishWithoutReview()
-            ? ModerationStatus::Approved
-            : ModerationStatus::Pending;
+        return ModerationStatus::forAuthor(
+            $user instanceof User ? $user : null,
+            savesAsDraft: false,
+        );
     }
 
     /**
@@ -368,33 +312,5 @@ class RecipeController extends Controller
         }
 
         return $user->isAdmin() || (int) $recipe->user_id === (int) $user->id;
-    }
-
-    /**
-     * Resolve ingredient name or create canonical record.
-     */
-    protected function resolveOrCreateIngredient(string $name): ?int
-    {
-        $normalized = mb_strtolower(trim($name));
-        if ($normalized === '') {
-            return null;
-        }
-
-        $canonical = Ingredient::where('canonical_name', $normalized)->first();
-        if ($canonical) {
-            return $canonical->id;
-        }
-
-        $alias = IngredientAlias::where('alias', $normalized)->first();
-        if ($alias) {
-            return $alias->ingredient_id;
-        }
-
-        $created = Ingredient::create([
-            'canonical_name' => $normalized,
-            'default_dimension' => 'none',
-        ]);
-
-        return $created->id;
     }
 }

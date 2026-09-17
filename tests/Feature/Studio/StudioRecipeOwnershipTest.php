@@ -130,12 +130,30 @@ test('a creator cannot moderate their own recipe', function () {
     /**
      * Publishing your own work is a moderator's decision, and creators bypass
      * the queue by role rather than by gaining this ability.
+     *
+     * Writing used to be refused here too, while the studio was read-only.
+     * Now that it is not, the write permissions are asserted in
+     * StudioRecipeWritingTest, ownership and all — and moderation is what
+     * stays out of a creator's reach.
      */
     expect(Gate::forUser($creator)->allows('moderate', $ownRecipe))->toBeFalse()
         ->and(Gate::forUser($creator)->allows('moderateAny', Recipe::class))->toBeFalse()
-        ->and(Gate::forUser($creator)->allows('update', $ownRecipe))->toBeFalse()
-        ->and(Gate::forUser($creator)->allows('delete', $ownRecipe))->toBeFalse()
-        ->and(Gate::forUser($creator)->allows('create', Recipe::class))->toBeFalse();
+        /** A per-resource shortcut with no record to scope to, so still admin-only. */
+        ->and(Gate::forUser($creator)->allows('deleteAny', Recipe::class))->toBeFalse();
+});
+
+test('a creator may write and change their own recipe, and only their own', function () {
+    $creator = User::factory()->creator()->create();
+    $other = User::factory()->creator()->create();
+
+    $ownRecipe = Recipe::factory()->for($creator)->create();
+    $foreignRecipe = Recipe::factory()->for($other)->create();
+
+    expect(Gate::forUser($creator)->allows('create', Recipe::class))->toBeTrue()
+        ->and(Gate::forUser($creator)->allows('update', $ownRecipe))->toBeTrue()
+        ->and(Gate::forUser($creator)->allows('delete', $ownRecipe))->toBeTrue()
+        ->and(Gate::forUser($creator)->allows('update', $foreignRecipe))->toBeFalse()
+        ->and(Gate::forUser($creator)->allows('delete', $foreignRecipe))->toBeFalse();
 });
 
 test('a creator may view their own recipe but not another creator\'s', function () {

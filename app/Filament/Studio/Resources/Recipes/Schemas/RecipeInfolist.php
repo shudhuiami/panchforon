@@ -6,7 +6,9 @@ use App\Enums\ModerationStatus;
 use App\Enums\SpiceLevel;
 use App\Filament\Studio\Resources\Recipes\RecipeResource;
 use App\Models\Recipe;
+use App\Models\RecipeIngredient;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -102,6 +104,33 @@ class RecipeInfolist
                             ->placeholder('0'),
                     ]),
 
+                /**
+                 * The list as it was written, in position order — ingredients()
+                 * sorts by it — rather than as the merge engine resolved it. An
+                 * author is checking their own line, so raw_text is the honest
+                 * thing to show; the canonical ingredient behind it matters to
+                 * shopping lists, not to them.
+                 */
+                Section::make('Ingredients')
+                    ->schema([
+                        RepeatableEntry::make('ingredients')
+                            ->hiddenLabel()
+                            ->columns(2)
+                            ->placeholder('None listed')
+                            ->schema([
+                                TextEntry::make('raw_text')
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(fn (string $state, RecipeIngredient $record): string => $record->is_optional
+                                        ? "{$state} (optional)"
+                                        : $state),
+
+                                TextEntry::make('note')
+                                    ->hiddenLabel()
+                                    ->color('gray')
+                                    ->placeholder('-'),
+                            ]),
+                    ]),
+
                 Section::make('Instructions')
                     ->collapsible()
                     ->schema([
@@ -124,6 +153,20 @@ class RecipeInfolist
                             ->url(fn (Recipe $record): ?string => $record->source_url)
                             ->openUrlInNewTab()
                             ->placeholder('-'),
+
+                        /**
+                         * The column holds a bare video id, so the link is
+                         * rebuilt from it rather than stored — which is the
+                         * whole reason YouTubeVideoId reduces a pasted URL to
+                         * eleven characters in the first place.
+                         */
+                        TextEntry::make('youtube_video_id')
+                            ->label('YouTube')
+                            ->url(fn (Recipe $record): ?string => $record->youtube_video_id === null
+                                ? null
+                                : 'https://www.youtube.com/watch?v='.$record->youtube_video_id)
+                            ->openUrlInNewTab()
+                            ->placeholder('No video'),
                     ]),
             ]);
     }

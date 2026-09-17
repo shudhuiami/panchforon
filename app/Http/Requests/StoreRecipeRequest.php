@@ -89,23 +89,13 @@ class StoreRecipeRequest extends FormRequest
      * What the recipe is created as. Publishing is the default, so a client
      * that sends no status is saving something the site can show.
      *
-     * A creator writes straight into the catalogue — that is the point of the
-     * role — so their recipe lands approved rather than queued. The Pending arm
-     * is left for the author who may post but is not trusted to skip review: a
-     * suspended creator, today the only one who reaches it.
-     *
-     * moderated_at and moderated_by stay null either way. They record that an
-     * admin made a decision, and on an auto-publish nobody did.
+     * The rule itself is ModerationStatus::forAuthor(), shared with the API's
+     * publish endpoint and with the Creator Studio so that all three agree on
+     * what a given author's save becomes.
      */
     public function moderationStatus(): ModerationStatus
     {
-        if ($this->savesAsDraft()) {
-            return ModerationStatus::Draft;
-        }
-
-        return $this->user()?->canPublishWithoutReview()
-            ? ModerationStatus::Approved
-            : ModerationStatus::Pending;
+        return ModerationStatus::forAuthor($this->user(), $this->savesAsDraft());
     }
 
     /**
