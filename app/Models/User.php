@@ -47,6 +47,18 @@ class User extends Authenticatable implements FilamentUser
     ];
 
     /**
+     * The column default only applies on insert, so a model that has not been
+     * near the database yet — anything built with ->make() — would otherwise
+     * carry a null role and blow up the first predicate that asked it a
+     * question.
+     *
+     * @var array<string, string>
+     */
+    protected $attributes = [
+        'role' => 'member',
+    ];
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -125,15 +137,23 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Gate for the Filament admin panel.
+     * Gate for every Filament panel.
      *
-     * Filament calls this on every panel request and on login, and aborts with
-     * a 403 when it returns false. Suspended admins are locked out too, so
-     * suspending an account is sufficient to revoke panel access.
+     * Filament calls this on each panel request and on login, and aborts with
+     * a 403 when it returns false. Suspending an account is therefore enough
+     * to revoke access to both panels at once.
+     *
+     * The default arm refuses rather than falling through to one of the named
+     * ones: a panel added later should be shut until someone deliberately
+     * opens it, not inherit whichever branch happened to be written last.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_admin && ! $this->isSuspended();
+        return match ($panel->getId()) {
+            'admin' => $this->isActiveAdmin(),
+            'studio' => $this->isCreator() && ! $this->isSuspended(),
+            default => false,
+        };
     }
 
     public function isSuspended(): bool

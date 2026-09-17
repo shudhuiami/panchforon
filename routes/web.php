@@ -17,4 +17,4 @@ Route::middleware('throttle:auth')->group(function () {
  * SPA entry point. Everything that is not an API route or the Filament admin
  * panel falls through to the React application.
  */
-Route::get('/{any?}', SpaController::class)->where('any', '^(?!api$|api/|admin$|admin/|auth/).*$');
+Route::get('/{any?}', SpaController::class)->where('any', '^(?!api$|api/|admin$|admin/|studio$|studio/|auth/).*$');
