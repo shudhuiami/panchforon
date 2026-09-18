@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\AvatarProviders\InitialsAvatarProvider;
+use App\Filament\Studio\Widgets\StudioOverview;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -73,10 +74,14 @@ class StudioPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             /**
-             * No widgets. The admin dashboard's figures are site-wide — total
-             * users, the size of the moderation queue — and none of that is a
-             * creator's business.
+             * One widget, and a studio-specific one. None of the admin panel's
+             * widgets are reused: their figures are site-wide — total users,
+             * the size of the moderation queue — and none of that is a
+             * creator's business. This one counts only their own work.
              */
+            ->widgets([
+                StudioOverview::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

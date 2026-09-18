@@ -35,3 +35,15 @@ The browser stringifies it. Keep hidden state scalar — the studio's video pick
 The failure is silent rather than loud: a request for a missing `/js/filament/support/support.js` reaches PHP, and the SPA catch-all in `routes/web.php` used to match it and return the storefront's HTML with a **200**. The browser gets a page where it asked for a script, so the only symptom is `filamentDropdown is not defined` in the console — every panel renders but no dropdown opens, no action modal mounts, no table filter works.
 
 Two things now keep it fixed, and both should stay: `composer.json`'s `post-autoload-dump` runs `filament:upgrade` (which publishes the assets) so every `composer install` regenerates them, and the catch-all excludes `build/ css/ fonts/ icons/ js/` so a missing asset is a plain 404 again. `SpaEntryTest` covers both.
+
+## Never assert a bare number against Filament's rendered HTML
+Every Filament stat, action and column renders a Heroicon inline, and an SVG `d` attribute is a long run of digits and decimals. `assertDontSee('99')` fails against a widget showing zero, because one of the icons draws `c.993 0 1.953-.138`. `assertSee('41')` is worse: it can pass while the figure is wrong.
+
+Strip the markup and assert on the text, which throws the path data away with the tags and leaves the label next to its value:
+
+```php
+$text = trim((string) preg_replace('/\s+/', ' ', strip_tags($component->html())));
+expect($text)->toContain('Ratings received 41');
+```
+
+`StudioOverviewTest` uses this. Prose assertions (`assertSee('Nothing removed')`) are safe as they are — it is only the numbers that collide.
