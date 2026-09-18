@@ -6,6 +6,7 @@ use App\DTOs\ParsedIngredient;
 use App\DTOs\RecipePlanItemInput;
 use App\Enums\MealSlot;
 use App\Enums\RecipeSource;
+use App\Enums\UserRole;
 use App\Models\Ingredient;
 use App\Models\MealPlan;
 use App\Models\MealPlanItem;
@@ -113,13 +114,22 @@ class RecipeSeeder extends Seeder
 
     public function run(RankingService $rankingService, MergeEngine $mergeEngine): void
     {
+        /**
+         * The demo cook writes the whole catalogue, so they have to be a
+         * creator: a member cannot post at all, and seeding eighty published
+         * recipes under an account that could not have written one of them
+         * would be a demo of a state the application does not allow.
+         */
         $demoUser = User::firstOrCreate(
             ['email' => 'demo@panchforon.com'],
             [
                 'name' => 'Ahmed Zobayer',
                 'password' => Hash::make('password'),
+                'role' => UserRole::Creator,
             ]
         );
+
+        $demoUser->forceFill(['role' => UserRole::Creator])->save();
 
         $reviewerUser = User::firstOrCreate(
             ['email' => 'reviewer@panchforon.com'],

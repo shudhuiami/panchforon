@@ -32,7 +32,7 @@
     "src": "node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-ckm6u5PU.css",
+    "file": "assets/app-CRrDsZF4.css",
     "name": "app",
     "names": [
       "app.css"
@@ -41,7 +41,7 @@
     "isEntry": true
   },
   "resources/css/filament/admin/theme.css": {
-    "file": "assets/theme-UHQchG3g.css",
+    "file": "assets/theme-Bj8YkBvB.css",
     "name": "theme",
     "names": [
       "theme.css"
@@ -57,7 +57,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-Ozvi02jf.js",
+    "file": "assets/app-C1s_RlRJ.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,

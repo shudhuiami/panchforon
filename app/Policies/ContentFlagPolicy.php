@@ -15,12 +15,12 @@ class ContentFlagPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, ContentFlag $flag): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function create(User $user): bool
@@ -30,17 +30,17 @@ class ContentFlagPolicy
 
     public function update(User $user, ContentFlag $flag): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, ContentFlag $flag): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function deleteAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -48,16 +48,11 @@ class ContentFlagPolicy
      */
     public function resolve(User $user, ContentFlag $flag): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function resolveAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
+        return $user->isActiveAdmin();
     }
 }

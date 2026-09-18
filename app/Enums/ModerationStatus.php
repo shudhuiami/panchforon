@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Models\User;
+
 enum ModerationStatus: string
 {
     /**
@@ -45,6 +47,34 @@ enum ModerationStatus: string
             self::Approved => 'heroicon-m-check-circle',
             self::Unpublished => 'heroicon-m-eye-slash',
         };
+    }
+
+    /**
+     * What a recipe becomes when its author saves it.
+     *
+     * The one statement of the rule. StoreRecipeRequest asks it for a new
+     * submission over the API, Api\RecipeController asks it when a draft is
+     * published later, and the Creator Studio asks it when a creator saves a
+     * recipe from the panel — so a recipe cannot land in a review queue by
+     * one route that it would have sailed past by another.
+     *
+     * A creator writes straight into the catalogue; that is the point of the
+     * role, so their recipe lands approved rather than queued. The Pending arm
+     * is for an author who may post but is not trusted to skip review — today
+     * a suspended creator, and anyone the API lets through without a role.
+     *
+     * moderated_at and moderated_by stay null in every arm. They record that
+     * an admin made a decision, and on an auto-publish nobody did.
+     */
+    public static function forAuthor(?User $author, bool $savesAsDraft): self
+    {
+        if ($savesAsDraft) {
+            return self::Draft;
+        }
+
+        return $author?->canPublishWithoutReview()
+            ? self::Approved
+            : self::Pending;
     }
 
     /**

@@ -12,32 +12,32 @@ class IngredientPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, Ingredient $ingredient): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function create(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function update(User $user, Ingredient $ingredient): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, Ingredient $ingredient): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function deleteAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -45,11 +45,6 @@ class IngredientPolicy
      */
     public function merge(User $user, Ingredient $ingredient): bool
     {
-        return $this->isActiveAdmin($user);
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
+        return $user->isActiveAdmin();
     }
 }

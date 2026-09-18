@@ -2,6 +2,7 @@
 
 use App\Enums\FlagReason;
 use App\Enums\FlagStatus;
+use App\Enums\UserRole;
 use App\Models\ContentFlag;
 use App\Models\Recipe;
 use App\Models\User;
@@ -97,7 +98,7 @@ test('the reasons endpoint lists every reason once', function () {
 });
 
 test('resolving a report records who decided and what they decided', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->create(['role' => UserRole::Admin]);
     $flag = ContentFlag::factory()->create();
 
     $flag->resolve(FlagStatus::Actioned, $admin, 'Unpublished the recipe.');

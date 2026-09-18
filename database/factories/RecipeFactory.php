@@ -58,6 +58,17 @@ class RecipeFactory extends Factory
     }
 
     /**
+     * A recipe with a video attached, stored the only way the column accepts
+     * one: the bare eleven-character id.
+     */
+    public function withVideo(string $videoId = 'dQw4w9WgXcQ'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'youtube_video_id' => $videoId,
+        ]);
+    }
+
+    /**
      * A recipe imported from TheMealDB rather than submitted by a user.
      */
     public function fromApi(): static

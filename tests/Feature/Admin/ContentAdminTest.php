@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Filament\Resources\ContentBlocks\ContentBlockResource;
 use App\Filament\Resources\ContentBlocks\Pages\EditContentBlock;
 use App\Filament\Resources\ContentBlocks\Pages\ListContentBlocks;
@@ -16,7 +17,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->create(['role' => UserRole::Admin]);
 });
 
 test('an ordinary cook cannot reach the content screens', function () {

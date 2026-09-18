@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Models\Rating;
 use App\Models\Recipe;
 use App\Models\User;
@@ -22,7 +23,7 @@ test('a cook page shows who they are and what they have published', function () 
 });
 
 test('a cook page never exposes the email or account flags', function () {
-    $cook = User::factory()->create(['email' => 'private@panchforon.test', 'is_admin' => true]);
+    $cook = User::factory()->create(['email' => 'private@panchforon.test', 'role' => UserRole::Admin]);
 
     $json = $this->getJson("/api/cooks/{$cook->id}")->assertOk()->json('data.cook');
 

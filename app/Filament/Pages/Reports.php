@@ -40,7 +40,7 @@ class Reports extends Dashboard
     {
         $user = Auth::user();
 
-        return $user instanceof User && $user->is_admin && ! $user->isSuspended();
+        return $user instanceof User && $user->isActiveAdmin();
     }
 
     /**

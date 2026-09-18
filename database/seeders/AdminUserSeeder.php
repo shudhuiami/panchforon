@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +23,7 @@ class AdminUserSeeder extends Seeder
 
         $user->fill([
             'name' => $user->exists ? $user->name : (string) config('admin.seed_name'),
-            'is_admin' => true,
+            'role' => UserRole::Admin,
             'suspended_at' => null,
             'suspension_reason' => null,
         ]);

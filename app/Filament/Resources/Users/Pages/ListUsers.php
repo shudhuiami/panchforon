@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use Filament\Resources\Pages\ListRecords;
@@ -26,9 +27,19 @@ class ListUsers extends ListRecords
             'all' => Tab::make('All')
                 ->badge(User::query()->count()),
 
+            /**
+             * Creators earn a tab of their own now that the role is three-way:
+             * they are the population an admin grants and revokes, and the
+             * Admins tab no longer contains them. Only Suspended is coloured,
+             * so a coloured badge on this page still means something is wrong.
+             */
+            'creators' => Tab::make('Creators')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('role', UserRole::Creator))
+                ->badge(User::query()->where('role', UserRole::Creator)->count()),
+
             'admins' => Tab::make('Admins')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_admin', true))
-                ->badge(User::query()->admins()->count()),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('role', UserRole::Admin))
+                ->badge(User::query()->where('role', UserRole::Admin)->count()),
 
             'suspended' => Tab::make('Suspended')
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereNotNull('suspended_at'))

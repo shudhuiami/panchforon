@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, Plus, Sparkles, Timer, Users } from 'lucide-react';
+import { Check, Loader2, Play, Plus, Sparkles, Timer, Users } from 'lucide-react';
 import { RecipeList } from '../../types/api';
 import { mealPlanApi } from '../../api/mealPlan';
 import { useAuth } from '../../context/AuthContext';
@@ -95,7 +95,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
             <Link
                 to={`/recipes/${recipe.slug}`}
                 className="relative block aspect-4/5 overflow-hidden focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-primary"
-                aria-label={recipe.title}
+                aria-label={recipe.has_video ? `${recipe.title}, with a video` : recipe.title}
             >
                 <Photo
                     src={recipe.image_url}
@@ -105,9 +105,22 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, className = '' }
                 />
                 <div className="img-fade pointer-events-none absolute inset-0" />
 
-                {recipe.cuisine && (
-                    <span className="absolute top-3 left-3 rounded-full bg-canvas/60 px-2.5 py-1 text-[11px] font-semibold text-ink backdrop-blur sm:top-4 sm:left-4">
-                        {recipe.cuisine}
+                {(recipe.cuisine || recipe.has_video) && (
+                    <span className="absolute top-3 left-3 flex items-center gap-1.5 sm:top-4 sm:left-4">
+                        {recipe.cuisine && (
+                            <span className="rounded-full bg-canvas/60 px-2.5 py-1 text-[11px] font-semibold text-ink backdrop-blur">{recipe.cuisine}</span>
+                        )}
+                        {/*
+                            Worth a tap before you commit to one: on a phone in
+                            a kitchen, "there is someone showing me this" beats
+                            a wall of steps. It borrows the cuisine chip's
+                            treatment and its corner, so it costs no new space.
+                        */}
+                        {recipe.has_video && (
+                            <span className="inline-flex size-6 items-center justify-center rounded-full bg-canvas/60 text-ink backdrop-blur" title="Has a video">
+                                <Play className="size-2.5 fill-current" aria-hidden="true" />
+                            </span>
+                        )}
                     </span>
                 )}
                 {recipe.bayesian_score !== null && recipe.bayesian_score > 0 && (

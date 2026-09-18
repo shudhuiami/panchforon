@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Recipe;
+use App\Support\YouTubeVideoId;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,11 +32,25 @@ class RecipeListResource extends JsonResource
             'cook_minutes' => $this->cook_minutes,
             'total_minutes' => $this->totalMinutes(),
             'spice_level' => $this->spice_level?->value,
+            'has_video' => $this->hasVideo(),
             'ratings_count' => $this->stat !== null ? (int) $this->stat->ratings_count : 0,
             'ratings_avg' => $this->stat !== null ? $this->stat->ratings_avg : null,
             'bayesian_score' => $this->stat !== null ? $this->stat->bayesian_score : null,
             'created_at' => $this->created_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Whether there is a video, not which one: a card shows a play badge and
+     * nothing more, so the id stays in the detail payload where something can
+     * actually embed it.
+     *
+     * Judged by the same extraction the detail resource serves the id through,
+     * so a card never promises a video the recipe page then cannot show.
+     */
+    private function hasVideo(): bool
+    {
+        return $this->youtube_video_id !== null && YouTubeVideoId::fromInput($this->youtube_video_id) !== null;
     }
 
     /**

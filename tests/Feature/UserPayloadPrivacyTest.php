@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CreatorApplication;
 use App\Models\Rating;
 use App\Models\Recipe;
 use App\Models\User;
@@ -14,6 +15,7 @@ test('the current user payload carries role and counts', function () {
     $this->actingAs($admin)->getJson('/api/user')
         ->assertStatus(200)
         ->assertJsonPath('data.is_admin', true)
+        ->assertJsonPath('data.role', 'admin')
         ->assertJsonPath('data.recipes_count', 2)
         ->assertJsonPath('data.ratings_count', 0)
         ->assertJsonPath('data.email', $admin->email);
@@ -39,7 +41,8 @@ test('a recipe author is public without an email address or role', function () {
 
     expect($json)->toHaveKeys(['id', 'name'])
         ->and($json)->not->toHaveKey('email')
-        ->and($json)->not->toHaveKey('is_admin');
+        ->and($json)->not->toHaveKey('is_admin')
+        ->and($json)->not->toHaveKey('role');
 });
 
 test('a reviewer is public without an email address', function () {
@@ -50,6 +53,25 @@ test('a reviewer is public without an email address', function () {
 
     expect($reviewer)->toHaveKeys(['id', 'name'])
         ->and($reviewer)->not->toHaveKey('email');
+});
+
+test('a creator application never names the admin who decided it', function () {
+    $applicant = User::factory()->create();
+    $reviewer = User::factory()->admin()->create(['name' => 'Backroom Admin']);
+    CreatorApplication::factory()->declined()->create([
+        'user_id' => $applicant->getKey(),
+        'reviewed_by' => $reviewer->getKey(),
+        'review_note' => 'Come back with a few recipes written up.',
+    ]);
+
+    $response = $this->actingAs($applicant)->getJson('/api/creator-applications/me')->assertStatus(200);
+
+    expect($response->json('data'))->toHaveKeys(['status', 'pitch', 'review_note', 'reviewed_at'])
+        ->and($response->json('data'))->not->toHaveKey('reviewed_by')
+        ->and($response->json('data'))->not->toHaveKey('reviewer')
+        ->and($response->json('data'))->not->toHaveKey('user_id');
+
+    $response->assertDontSee('Backroom Admin')->assertDontSee($reviewer->email);
 });
 
 test('recipe payloads expose moderation status', function () {

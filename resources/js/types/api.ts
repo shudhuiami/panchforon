@@ -6,6 +6,9 @@ export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'snack' | 'dinner' | '
 /** How hot a dish is. Null on the many recipes with nothing to say about it. */
 export type SpiceLevel = 'mild' | 'medium' | 'hot';
 
+/** What an account may do. Only ever sent on the signed-in user's own payload. */
+export type UserRole = 'member' | 'creator' | 'admin';
+
 /** Another person, as shown on their recipes and reviews. */
 export interface User {
     id: number;
@@ -17,6 +20,7 @@ export interface User {
 export interface CurrentUser extends User {
     email: string;
     is_admin: boolean;
+    role: UserRole;
     email_verified_at?: string | null;
     recipes_count?: number;
     ratings_count?: number;
@@ -105,6 +109,7 @@ export interface RecipeList {
     ratings_avg: number | null;
     bayesian_score: number | null;
     created_at?: string;
+    has_video?: boolean;
 }
 
 export interface RecipeDetail {
@@ -127,6 +132,8 @@ export interface RecipeDetail {
     /** prep + cook. Null only when neither time is recorded. */
     total_minutes?: number | null;
     spice_level?: SpiceLevel | null;
+    /** The eleven-character id, never a URL: it ends up in an iframe src. */
+    youtube_video_id?: string | null;
     source_url?: string | null;
     ingredients: RecipeIngredient[];
     stat?: RecipeStat | null;
@@ -266,4 +273,20 @@ export interface Cook {
 export interface CookProfile {
     cook: Cook;
     recipes: PaginatedResponse<RecipeList>;
+}
+
+export type CreatorApplicationStatus = 'pending' | 'approved' | 'declined';
+
+/**
+ * An application as its applicant sees it. It deliberately never names the
+ * admin who decided — who declined you is not part of the answer.
+ */
+export interface CreatorApplication {
+    id: number;
+    status: CreatorApplicationStatus;
+    pitch: string;
+    youtube_channel_url?: string | null;
+    review_note?: string | null;
+    reviewed_at?: string | null;
+    created_at?: string;
 }

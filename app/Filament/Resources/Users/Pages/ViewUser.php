@@ -14,7 +14,7 @@ class ViewUser extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            UserModerationActions::toggleAdmin(),
+            UserModerationActions::changeRole(),
             UserModerationActions::suspend(),
             UserModerationActions::liftSuspension(),
             EditAction::make(),

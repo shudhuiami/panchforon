@@ -17,27 +17,27 @@ class UnitPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, Unit $unit): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function create(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function update(User $user, Unit $unit): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, Unit $unit): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     /**
@@ -47,10 +47,5 @@ class UnitPolicy
     public function deleteAny(User $user): bool
     {
         return false;
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
     }
 }

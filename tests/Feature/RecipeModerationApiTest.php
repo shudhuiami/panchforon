@@ -55,8 +55,8 @@ test('an admin can read any recipe regardless of moderation state', function () 
         ->assertJsonPath('data.id', $recipe->id);
 });
 
-test('a newly submitted recipe goes into the moderation queue', function () {
-    $response = $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+test('a newly posted recipe goes onto the site rather than into the queue', function () {
+    $response = $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'title' => 'Shorshe Ilish',
         'instructions' => 'Steam the hilsa with mustard paste.',
         'ingredients' => [
@@ -69,9 +69,10 @@ test('a newly submitted recipe goes into the moderation queue', function () {
 
     $recipe = Recipe::query()->where('title', 'Shorshe Ilish')->sole();
 
-    expect($recipe->moderation_status)->toBe(ModerationStatus::Pending);
+    expect($recipe->moderation_status)->toBe(ModerationStatus::Approved)
+        ->and(Recipe::query()->awaitingModeration()->count())->toBe(0);
 
-    $this->getJson('/api/recipes?q=Shorshe')->assertJsonCount(0, 'data');
+    $this->getJson('/api/recipes?q=Shorshe')->assertJsonCount(1, 'data');
 });
 
 test('cuisine and category facets exclude unapproved recipes', function () {
@@ -100,7 +101,7 @@ test('closing registration blocks the register endpoint', function () {
 test('closing submissions blocks the recipe store endpoint', function () {
     app(SettingsRepository::class)->set('submissions_open', false);
 
-    $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+    $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'title' => 'Panta Bhat',
         'instructions' => 'Soak rice overnight.',
         'ingredients' => [['raw_text' => '2 cups rice']],
@@ -116,7 +117,7 @@ test('registration and submissions are open by default', function () {
         'password' => 'password123',
     ])->assertStatus(201);
 
-    $this->actingAs(User::factory()->create())->postJson('/api/recipes', [
+    $this->actingAs(User::factory()->creator()->create())->postJson('/api/recipes', [
         'title' => 'Chingri Malai Curry',
         'instructions' => 'Simmer prawns in coconut milk.',
         'ingredients' => [['raw_text' => '400 g prawns']],

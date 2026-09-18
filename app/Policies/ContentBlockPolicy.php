@@ -16,12 +16,12 @@ class ContentBlockPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function view(User $user, ContentBlock $block): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function create(User $user): bool
@@ -31,7 +31,7 @@ class ContentBlockPolicy
 
     public function update(User $user, ContentBlock $block): bool
     {
-        return $this->isActiveAdmin($user);
+        return $user->isActiveAdmin();
     }
 
     public function delete(User $user, ContentBlock $block): bool
@@ -42,10 +42,5 @@ class ContentBlockPolicy
     public function deleteAny(User $user): bool
     {
         return false;
-    }
-
-    private function isActiveAdmin(User $user): bool
-    {
-        return $user->is_admin && ! $user->isSuspended();
     }
 }

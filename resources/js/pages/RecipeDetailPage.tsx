@@ -40,6 +40,7 @@ import { StatusPanel } from '../components/common/StatusPanel';
 import { Reveal } from '../components/motion/Reveal';
 import { Badge } from '../components/ui/Badge';
 import { formatMinutes, RecipeFallback, spiceMetaFor } from '../features/recipes/RecipeCard';
+import { RecipeVideo } from '../features/recipes/RecipeVideo';
 import { RatingReviewModal } from '../features/ratings/RatingReviewModal';
 import { SaveButton } from '../features/saves/SaveButton';
 import { ShareButton } from '../features/recipes/ShareButton';
@@ -177,6 +178,9 @@ export const RecipeDetailPage: React.FC = () => {
     const reviews = recipe.ratings ?? [];
     const distribution = [5, 4, 3, 2, 1].map((stars) => ({ stars, count: reviews.filter((r) => r.stars === stars).length }));
 
+    /** The hero's photo, and what a video falls back to when YouTube has no still for it. */
+    const heroPhoto = <Photo src={recipe.image_url} alt={recipe.title} className="h-full w-full object-cover" fallback={<RecipeFallback recipe={recipe} />} />;
+
     return (
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
             <div className="flex animate-fade-in flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -210,7 +214,7 @@ export const RecipeDetailPage: React.FC = () => {
             <section className="mt-6 grid grid-cols-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-center lg:gap-12">
                 <div className="animate-scale-in lg:col-span-6">
                     <div className="relative aspect-4/3 overflow-hidden rounded-[2rem] border border-line bg-surface-2">
-                        <Photo src={recipe.image_url} alt={recipe.title} className="h-full w-full object-cover" fallback={<RecipeFallback recipe={recipe} />} />
+                        {recipe.youtube_video_id ? <RecipeVideo videoId={recipe.youtube_video_id} title={recipe.title} photo={heroPhoto} /> : heroPhoto}
                         <div className="img-fade pointer-events-none absolute inset-0" />
                         <div className="absolute top-4 left-4 flex flex-wrap gap-2 sm:top-5 sm:left-5">
                             {recipe.cuisine && (

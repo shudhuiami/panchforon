@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, SearchX, ShieldAlert } from 'lucide-react';
 import { recipesApi } from '../api/recipes';
@@ -66,6 +66,13 @@ export const EditRecipePage: React.FC = () => {
         );
     }
 
+    /**
+     * Editing a recipe you already own stays open to everyone, so a member who
+     * posted before the role existed keeps their work. Putting one live is the
+     * creator's half, and the API refuses it, so the form must not offer it.
+     */
+    const canPostRecipes = user.role === 'creator' || user.role === 'admin';
+
     return (
         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
             <header className="mb-8 animate-slide-up">
@@ -76,7 +83,7 @@ export const EditRecipePage: React.FC = () => {
                         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink text-balance sm:text-5xl">{recipe.title}</h1>
                         <p className="mt-4 text-base text-ink-2 sm:text-lg">
                             {isDraft
-                                ? 'Only you can see this one. Keep saving it as a draft, and publish it when it’s ready for a moderator to look over.'
+                                ? 'Only you can see this one. Keep saving it as a draft, and publish it when it’s ready to go up.'
                                 : 'Tweak the ingredients, tidy the steps or swap the photo. Ratings and meal-plan slots stay attached.'}
                         </p>
                     </div>
@@ -87,9 +94,19 @@ export const EditRecipePage: React.FC = () => {
                 </div>
             </header>
 
-            {isDraft && !settings.submissions_open && (
+            {isDraft && !canPostRecipes && (
+                <Alert variant="info" title="Publishing is for creators" className="mb-6">
+                    Your draft is safe here and yours to keep editing. Putting it on the site is a creator’s job —{' '}
+                    <Link to="/become-a-creator" className="font-semibold text-primary underline-offset-2 hover:underline">
+                        apply to become one
+                    </Link>{' '}
+                    and you can publish it yourself.
+                </Alert>
+            )}
+
+            {isDraft && canPostRecipes && !settings.submissions_open && (
                 <Alert variant="warning" title="Publishing is paused" className="mb-6">
-                    Recipes aren’t being accepted for review right now. Your draft is safe here, and the publish button comes back when submissions reopen.
+                    New recipes aren’t being accepted right now. Your draft is safe here, and the publish button comes back when submissions reopen.
                 </Alert>
             )}
 
@@ -107,7 +124,7 @@ export const EditRecipePage: React.FC = () => {
                 }}
                 isSubmitting={updateMutation.isPending}
                 onCancel={() => navigate(-1)}
-                canPublish={settings.submissions_open}
+                canPublish={canPostRecipes && settings.submissions_open}
             />
         </div>
     );

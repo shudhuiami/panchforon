@@ -36,10 +36,13 @@ test('a guest is redirected to the panel login screen', function () {
 });
 
 test('a signed-in non-admin is refused every admin page', function () {
-    $member = User::factory()->create();
+    /** A creator has a panel of their own, and this is not it. */
+    $refused = [User::factory()->create(), User::factory()->creator()->create()];
 
-    foreach (adminPaths() as $path) {
-        $this->actingAs($member)->get($path)->assertForbidden();
+    foreach ($refused as $member) {
+        foreach (adminPaths() as $path) {
+            $this->actingAs($member)->get($path)->assertForbidden();
+        }
     }
 });
 
